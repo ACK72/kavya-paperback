@@ -13,7 +13,7 @@
 		"serve": "paperback serve"
 	},
 	"author": "ACK72",
-	"license": "MIT",
+	"license": "BSD-2-Clause",
 	"devDependencies": {
 		"@typescript-eslint/eslint-plugin": "^5.11.0",
 		"@typescript-eslint/parser": "^5.11.0",
