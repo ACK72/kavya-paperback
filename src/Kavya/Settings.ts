@@ -37,10 +37,10 @@ export const serverSettingsMenu = (
 					header: "Server Settings",
 					rows: async () => retrieveStateData(stateManager).then((values) => [
 						createInputField({
-							id: "serverAddress",
+							id: "kavitaAddress",
 							label: "Server URL",
 							placeholder: "http://127.0.0.1:8080",
-							value: values.serverURL,
+							value: values.kavitaURL,
 							maskInput: false,
 						}),
 						// TS-Ignoring because this isnt documented yet
@@ -48,10 +48,10 @@ export const serverSettingsMenu = (
 						// SecureInputField
 						// @ts-ignore
 						(typeof createSecureInputField === 'undefined' ? createInputField : createSecureInputField)({
-							id: "serverAPIKey",
+							id: "kavitaAPIKey",
 							label: "API Key",
 							placeholder: "Kavita API Key",
-							value: values.serverAPIKey
+							value: values.kavitaAPIKey
 						}),
 					]),
 				}),
@@ -66,9 +66,14 @@ export const serverSettingsMenu = (
 							value: values.showOnDeck,
 						}),
 						createSwitch({
-							id: 'showRecentlyAdded',
-							label: 'Show Recently Added',
-							value: values.showRecentlyAdded,
+							id: 'showRecentlyUpdated',
+							label: 'Show Recently Updated',
+							value: values.showRecentlyUpdated,
+						}),
+						createSwitch({
+							id: 'showNewlyAdded',
+							label: 'Show Newly Added',
+							value: values.showNewlyAdded,
 						})
 					]),
 				}),

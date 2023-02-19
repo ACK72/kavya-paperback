@@ -7,25 +7,29 @@ import {
 	MangaStatus,
 	MangaTile,
 	PagedResults,
+	Request,
+	RequestInterceptor,
 	Response,
 	SearchRequest,
 	Section,
 	Source,
 	SourceInfo,
-	TagType,
+	SourceStateManager,
+	TagType
 } from "paperback-extensions-common";
 import {
 	serverSettingsMenu
 } from "./Settings";
 import {
+	getAuthorizationString,
 	getKavitaAPI,
-	getKavitaOPDS,
 	getOptions,
 	getServerUnavailableMangaTiles,
+	log
 } from "./Common";
 
 export const KavyaInfo: SourceInfo = {
-	version: "0.1.0",
+	version: "0.2.0",
 	name: "Kavya",
 	icon: "icon.png",
 	author: "ACK72",
@@ -41,12 +45,40 @@ export const KavyaInfo: SourceInfo = {
 	],
 };
 
+export class KavitaRequestInterceptor implements RequestInterceptor {
+	stateManager: SourceStateManager;
+	authorization: string;
+
+	constructor(stateManager: SourceStateManager) {
+		this.stateManager = stateManager;
+		this.authorization = '';
+	}
+
+	async interceptResponse(response: Response): Promise<Response> {
+		return response;
+	}
+
+	async interceptRequest(request: Request): Promise<Request> {
+		if (this.authorization === '') {
+			this.authorization = await getAuthorizationString(this.stateManager);
+		}
+		
+		request.headers = {
+			"Authorization": this.authorization,
+			"Content-Type": typeof request.data === "string" ? "application/json" : "text/html"
+		}
+
+		return request;
+	}
+}
+
 export class Kavya extends Source {
 	stateManager = createSourceStateManager({});
-
+	
 	requestManager = createRequestManager({
 		requestsPerSecond: 4,
-		requestTimeout: 20000
+		requestTimeout: 20000,
+		interceptor: new KavitaRequestInterceptor(this.stateManager),
 	});
 
 	override async getSourceMenu(): Promise<Section> {
@@ -61,20 +93,18 @@ export class Kavya extends Source {
 
 	async getMangaDetails(mangaId: string): Promise<Manga> {
 		const kavitaAPI = await getKavitaAPI(this.stateManager);
-		const kavitaOPDS = await getKavitaOPDS(this.stateManager);
 
 		const request = createRequestObject({
-			url: `${kavitaOPDS}/series/${mangaId}`,
+			url: `${kavitaAPI}/Series/${mangaId}`,
 			method: "GET",
 		});
 
 		const response = await this.requestManager.schedule(request, 1);
-
-		let $ = this.cheerio.load(response.data, { xmlMode: true });
+		const result = typeof response.data === "string" ? JSON.parse(response.data) : response.data;
 
 		return createManga({
 			id: mangaId,
-			titles: [$("title").first().text()],
+			titles: [result.name],
 			image: `${kavitaAPI}/image/series-cover?seriesId=${mangaId}`,
 			desc: "",
 			status: MangaStatus.UNKNOWN,
@@ -82,31 +112,35 @@ export class Kavya extends Source {
 	}
 
 	async getChapters(mangaId: string): Promise<Chapter[]> {
-		const kavitaOPDS = await getKavitaOPDS(this.stateManager);
+		const kavitaAPI = await getKavitaAPI(this.stateManager);
 
 		const request = createRequestObject({
-			url: `${kavitaOPDS}/series/${mangaId}`,
+			url: `${kavitaAPI}/Series/volumes`,
+			param: `?seriesId=${mangaId}`,
 			method: "GET",
 		});
 
 		const response = await this.requestManager.schedule(request, 1);
-
-		let $ = this.cheerio.load(response.data, { xmlMode: true });
+		const result = typeof response.data === "string" ? JSON.parse(response.data) : response.data;
 
 		const chapters: Chapter[] = [];
 
-		$("entry").each((index, element) => {
-			chapters.push(
-				createChapter({
-					id: $("id", element).first().text(),
-					mangaId: mangaId,
-					chapNum: parseFloat($("id", element).first().text()),
-					name: `${$("title").first().text()} - ${$("title", element).first().text()}`,
-					// @ts-ignore
-					sortingIndex: index
-				})
-			);
-		});
+		for (const volume of result) {
+			for (const chapter of volume.chapters) {
+				chapters.push(
+					createChapter({
+						id: `${chapter.id}`,
+						mangaId: mangaId,
+						chapNum: volume.number,
+						//chapNum: chapter.id,
+						name: volume.name,
+						//volume: chapter.volumeId,
+						// @ts-ignore
+						sortingIndex: volume.number,
+					})
+				);
+			}
+		}
 
 		return chapters;
 	}
@@ -116,37 +150,26 @@ export class Kavya extends Source {
 		chapterId: string
 	): Promise<ChapterDetails> {
 		const kavitaAPI = await getKavitaAPI(this.stateManager);
-		const kavitaOPDS = await getKavitaOPDS(this.stateManager);
 
 		const request = createRequestObject({
-			url: `${kavitaOPDS}/series/4/volume/${chapterId}/chapter/${chapterId}`,
+			url: `${kavitaAPI}/Series/chapter`,
+			param: `?chapterId=${chapterId}`,
 			method: "GET",
 		});
 
 		const response = await this.requestManager.schedule(request, 1);
-		
-		let $ = this.cheerio.load(response.data, { xmlMode: true });
+		const result = typeof response.data === "string" ? JSON.parse(response.data) : response.data;
 
 		const pages: string[] = [];
-		const pool: {[key: string]: number} = {};
+		for (let i = 0; i < result.pages; i++) {
+			pages.push(`${kavitaAPI}/Reader/image?chapterId=${chapterId}&page=${i}&extractPdf=true`);
+		}
 
-		$('[rel="http://vaemendis.net/opds-pse/stream"]').each((_, element) => {
-			const url = $(element).attr("href") ?? "";
-			const count = parseInt($(element).attr("p5:count") ?? "0");
-
-			let start = pool[url] ?? 0;
-			for (let i = 1;i <= count;i++) {
-				pages.push(kavitaAPI + url.slice(4).replace('{pageNumber}', `${start + i}`));
-			}
-			
-			pool[url] = start + count;
-		});
-		
 		return createChapterDetails({
 			id: chapterId,
-			longStrip: false,
 			mangaId: mangaId,
 			pages: pages,
+			longStrip: false,
 		});
 	}
 
@@ -157,45 +180,45 @@ export class Kavya extends Source {
 	): Promise<PagedResults> {
 		// This function is also called when the user search in an other source. It should not throw if the server is unavailable.
 		const kavitaAPI = await getKavitaAPI(this.stateManager);
-		const kavitaOPDS = await getKavitaOPDS(this.stateManager);
 
-		if (kavitaOPDS === null) {
-			console.log("searchRequest failed because server settings are unset");
+		if (kavitaAPI === null) {
+			log("searchRequest failed because server settings are unset");
 			return createPagedResults({
 				results: getServerUnavailableMangaTiles(),
 			});
 		}
 
 		const request = createRequestObject({
-			url: `${kavitaOPDS}/series`,
-			param: `?query=${encodeURIComponent(searchQuery.title ?? "''")}`,
+			url: `${kavitaAPI}/Search/search`,
+			param: `?queryString=${encodeURIComponent(searchQuery.title ?? "''")}`,
 			method: "GET"
 		});
-	
+
 		// We don't want to throw if the server is unavailable
 		let response: Response;
+		let result;
+
+		const tiles: MangaTile[] = [];
+
 		try {
 			response = await this.requestManager.schedule(request, 1);
+			result = JSON.parse(response.data);
+
+			for (const manga of result.series) {
+				tiles.push(
+					createMangaTile({
+						id: `${manga.seriesId}`,
+						title: createIconText({text: manga.name}),
+						image: `${kavitaAPI}/image/series-cover?seriesId=${manga.seriesId}`,
+					})
+				);
+			}
 		} catch (error) {
-			console.log(`searchRequest failed with error: ${error}`);
+			log(`searchRequest failed with error: ${error}`);
 			return createPagedResults({
 				results: getServerUnavailableMangaTiles(),
 			});
 		}
-		
-		let $ = this.cheerio.load(response.data, { xmlMode: true });
-		
-		const tiles: MangaTile[] = [];
-
-		$("entry").each((_, element) => {
-			tiles.push(
-				createMangaTile({
-					id: $("id", element).first().text(),
-					title: createIconText({ text: $("title", element).first().text() }),
-					image: `${kavitaAPI}/image/series-cover?seriesId=${$("id", element).first().text()}`,
-				})
-			);
-		});
 		
 		return createPagedResults({
 			results: tiles
@@ -210,21 +233,7 @@ export class Kavya extends Source {
 		// We won't use `await this.getKavitaAPI()` as we do not want to throw an error on
 		// the homepage when server settings are not set
 		const kavitaAPI = await getKavitaAPI(this.stateManager);
-		const kavitaOPDS = await getKavitaOPDS(this.stateManager);
-		const { showOnDeck, showRecentlyAdded } = await getOptions(this.stateManager);
-
-
-		if (kavitaOPDS === null) {
-			console.log("searchRequest failed because server settings are unset");
-			const section = createHomeSection({
-				id: "unset",
-				title: "Go to source settings to set your Kavita server.",
-				view_more: false,
-				items: getServerUnavailableMangaTiles(),
-			});
-			sectionCallback(section);
-			return;
-		}
+		const { showOnDeck, showRecentlyUpdated, showNewlyAdded } = await getOptions(this.stateManager);
 
 		// The source define two homepage sections: new and latest
 		const sections = [];
@@ -237,71 +246,91 @@ export class Kavya extends Source {
 			}));
 		}
 
-		if (showRecentlyAdded) {
+		if (showRecentlyUpdated) {
 			sections.push(createHomeSection({
-				id: 'new',
-				title: 'Recently added series',
+				id: 'recentlyupdated',
+				title: 'Recently Updated Series',
+				view_more: true,
+			}));
+		}
+
+		if (showNewlyAdded) {
+			sections.push(createHomeSection({
+				id: 'newlyadded',
+				title: 'Newly Added Series',
 				view_more: true,
 			}));
 		}
 
 		const request = createRequestObject({
-			url: `${kavitaOPDS}/libraries`,
+			url: `${kavitaAPI}/Library`,
 			method: "GET",
 		});
 
 		const response = await this.requestManager.schedule(request, 1);
-		
-		let $ = this.cheerio.load(response.data, { xmlMode: true });
 
-		$("entry").each((_, element) => {
+		if (response.status !== 200) {
+			log(`getHomePageSections failed with response status: ${response.status}`);
+			return;
+		}
+
+		const result = typeof response.data === "string" ? JSON.parse(response.data) : response.data;
+		
+		for (const library of result) {
 			sections.push(createHomeSection({
-				id: $("id", element).first().text(),
-				title: $("title", element).first().text(),
+				id: `${library.id}`,
+				title: library.name,
 				view_more: true,
 			}));
-		});
+		}
 
 		const promises: Promise<void>[] = [];
 
 		for (const section of sections) {
-			// Let the app load empty tagSections
 			sectionCallback(section);
 
-			let apiPath: string;
+			// rome-ignore lint/suspicious/noExplicitAny: <explanation>
+			// rome-ignore lint/style/useSingleVarDeclarator: <explanation>
+			let apiPath: string, body: any = {}, id: string = 'id', title: string = 'name';
 			switch (section.id) {
 				case 'ondeck':
-					apiPath = `${kavitaOPDS}/on-deck`;
+					apiPath = `${kavitaAPI}/Series/on-deck`;
 					break;
-				case 'new':
-					apiPath = `${kavitaOPDS}/recently-added`;
+				case 'recentlyupdated':
+					apiPath = `${kavitaAPI}/Series/recently-updated-series`;
+					id = 'seriesId', title = 'seriesName';
+					break;
+				case 'newlyadded':
+					apiPath = `${kavitaAPI}/Series/recently-added`;
 					break;
 				default:
-					apiPath = `${kavitaOPDS}/libraries/${section.id}`;
+					apiPath = `${kavitaAPI}/Series/all`;
+					body = {'libraries': [parseInt(section.id)]};
 					break;
 			}
-
+			
 			const request = createRequestObject({
 				url: apiPath,
-				method: "GET",
+				data: JSON.stringify(body),
+				method: "POST",
 			});
 
 			// Get the section data
 			promises.push(
 				this.requestManager.schedule(request, 1).then((response) => {
-					let $ = this.cheerio.load(response.data, { xmlMode: true });
+					let result = typeof response.data === "string" ? JSON.parse(response.data) : response.data;
 
 					const tiles: MangaTile[] = [];
-
-					$("entry").each((_, element) => {
+					
+					for (const series of result) {
 						tiles.push(
 							createMangaTile({
-								id: $("id", element).first().text(),
-								title: createIconText({ text: $("title", element).first().text() }),
-								image: `${kavitaAPI}/image/series-cover?seriesId=${$("id", element).first().text()}`,
+								id: `${series[id]}`,
+								title: createIconText({text: series[title]}),
+								image: `${kavitaAPI}/image/series-cover?seriesId=${series[id]}`
 							})
 						);
-					});
+					}
 
 					section.items = tiles;
 					sectionCallback(section);
@@ -319,41 +348,47 @@ export class Kavya extends Source {
 		metadata: any
 	): Promise<PagedResults> {
 		const kavitaAPI = await getKavitaAPI(this.stateManager);
-		const kavitaOPDS = await getKavitaOPDS(this.stateManager);
 
-		let apiPath: string;
+		// rome-ignore lint/suspicious/noExplicitAny: <explanation>
+		// rome-ignore lint/style/useSingleVarDeclarator: <explanation>
+		let apiPath: string, body: any = {}, id: string = 'id', title: string = 'name';
 		switch (homepageSectionId) {
 			case 'ondeck':
-				apiPath = `${kavitaOPDS}/on-deck`;
+				apiPath = `${kavitaAPI}/Series/on-deck`;
 				break;
-			case 'new':
-				apiPath = `${kavitaOPDS}/recently-added`;
+			case 'recentlyupdated':
+				apiPath = `${kavitaAPI}/Series/recently-updated-series`;
+				id = 'seriesId', title = 'seriesName';
+				break;
+			case 'newlyadded':
+				apiPath = `${kavitaAPI}/Series/recently-added`;
 				break;
 			default:
-				apiPath = `${kavitaOPDS}/libraries/${homepageSectionId}`;
+				apiPath = `${kavitaAPI}/Series/all`;
+				body = {'libraries': [parseInt(homepageSectionId)]};
 				break;
 		}
 
 		const request = createRequestObject({
 			url: apiPath,
-			method: "GET",
+			data: JSON.stringify(body),
+			method: "POST",
 		});
 
 		const response = await this.requestManager.schedule(request, 1);
-
-		let $ = this.cheerio.load(response.data, { xmlMode: true });
+		const result = typeof response.data === "string" ? JSON.parse(response.data) : response.data;
 
 		const tiles: MangaTile[] = [];
-
-		$("entry").each((_, element) => {
+		
+		for (const series of result) {
 			tiles.push(
 				createMangaTile({
-					id: $("id", element).first().text(),
-					title: createIconText({ text: $("title", element).first().text() }),
-					image: `${kavitaAPI}/image/series-cover?seriesId=${$("id", element).first().text()}`,
+					id: `${series[id]}`,
+					title: createIconText({text: series[title]}),
+					image: `${kavitaAPI}/image/series-cover?seriesId=${series[id]}`
 				})
 			);
-		});
+		}
 
 		return createPagedResults({
 			results: tiles
