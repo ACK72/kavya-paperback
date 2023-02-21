@@ -365,7 +365,7 @@ __exportStar(require("./SearchFilter"), exports);
 },{"./Chapter":5,"./ChapterDetails":6,"./Constants":7,"./DynamicUI":23,"./HomeSection":24,"./Languages":25,"./Manga":26,"./MangaTile":27,"./MangaUpdate":28,"./PagedResults":29,"./RawData":30,"./RequestHeaders":31,"./RequestInterceptor":32,"./RequestManager":33,"./RequestObject":34,"./ResponseObject":35,"./SearchField":36,"./SearchFilter":37,"./SearchRequest":38,"./SourceInfo":39,"./SourceManga":40,"./SourceStateManager":41,"./SourceTag":42,"./TagSection":43,"./TrackedManga":44,"./TrackedMangaChapterReadAction":45,"./TrackerActionQueue":46}],48:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.setStateData = exports.retrieveStateData = exports.getOptions = exports.getAuthorizationString = exports.getKavitaAPI = exports.getServerUnavailableMangaTiles = exports.log = void 0;
+exports.setStateData = exports.retrieveStateData = exports.getOptions = exports.getAuthorizationString = exports.getKavitaAPIUrl = exports.getServerUnavailableMangaTiles = exports.log = void 0;
 function log(message) {
     console.log(`[Kavya] ${message}`);
 }
@@ -374,10 +374,10 @@ function getServerUnavailableMangaTiles() {
     // This tile is used as a placeholder when the server is unavailable
     return [
         createMangaTile({
-            id: "placeholder-id",
-            title: createIconText({ text: "Server" }),
-            image: "",
-            subtitleText: createIconText({ text: "unavailable" }),
+            id: 'placeholder-id',
+            title: createIconText({ text: 'Server' }),
+            image: '',
+            subtitleText: createIconText({ text: 'unavailable' }),
         }),
     ];
 }
@@ -386,21 +386,18 @@ exports.getServerUnavailableMangaTiles = getServerUnavailableMangaTiles;
 // KAVITA API STATE METHODS
 //
 const DEFAULT_KAVITA_SERVER_ADDRESS = 'https://demo.kavitareader.com';
+const DEFAULT_KAVITA_SERVER_API_URL = `${DEFAULT_KAVITA_SERVER_ADDRESS}/api`;
 const DEFAULT_KAVITA_SERVER_API_KEY = '';
-const DEFAULT_KAVITA_API = `${DEFAULT_KAVITA_SERVER_ADDRESS}/api`;
 const DEFAULT_SHOW_ON_DECK = true;
 const DEFAULT_SHOW_RECENTLY_UPDATED = true;
 const DEFAULT_SHOW_NEWLY_ADDED = true;
-async function getKavitaAPI(stateManager) {
-    return await stateManager.retrieve('kavitaAPI') ?? DEFAULT_KAVITA_API;
+async function getKavitaAPIUrl(stateManager) {
+    return await stateManager.retrieve('kavitaAPIUrl') ?? DEFAULT_KAVITA_SERVER_API_URL;
 }
-exports.getKavitaAPI = getKavitaAPI;
+exports.getKavitaAPIUrl = getKavitaAPIUrl;
 async function getAuthorizationString(stateManager) {
-    const apiUri = await stateManager.retrieve('kavitaAPI') ?? DEFAULT_KAVITA_API;
+    const apiUri = await stateManager.retrieve('kavitaAPIUrl') ?? DEFAULT_KAVITA_SERVER_API_URL;
     const apiKey = await stateManager.keychain.retrieve('kavitaAPIKey') ?? DEFAULT_KAVITA_SERVER_API_KEY;
-    if (apiKey === '') {
-        return '';
-    }
     const manager = createRequestManager({
         requestsPerSecond: 4,
         requestTimeout: 20000
@@ -408,11 +405,11 @@ async function getAuthorizationString(stateManager) {
     const request = createRequestObject({
         url: `${apiUri}/Plugin/authenticate`,
         param: `?apiKey=${apiKey}&pluginName=Kavya`,
-        method: "POST",
+        method: 'POST',
     });
     const response = await manager.schedule(request, 1);
-    const result = typeof response.data === "string" ? JSON.parse(response.data) : response.data;
-    return `Bearer ${result.token}`;
+    const token = typeof response.data === 'string' ? JSON.parse(response.data).token : undefined;
+    return token ? `Bearer ${token}` : '';
 }
 exports.getAuthorizationString = getAuthorizationString;
 async function getOptions(stateManager) {
@@ -424,7 +421,7 @@ async function getOptions(stateManager) {
 exports.getOptions = getOptions;
 async function retrieveStateData(stateManager) {
     const kavitaURL = await stateManager.retrieve('kavitaAddress') ?? DEFAULT_KAVITA_SERVER_ADDRESS;
-    const kavitaAPIKey = await stateManager.retrieve('kavitaAPIKey') ?? DEFAULT_KAVITA_SERVER_API_KEY;
+    const kavitaAPIKey = await stateManager.keychain.retrieve('kavitaAPIKey') ?? DEFAULT_KAVITA_SERVER_API_KEY;
     const showOnDeck = await stateManager.retrieve('showOnDeck') ?? DEFAULT_SHOW_ON_DECK;
     const showRecentlyUpdated = await stateManager.retrieve('showRecentlyUpdated') ?? DEFAULT_SHOW_RECENTLY_UPDATED;
     const showNewlyAdded = await stateManager.retrieve('showNewlyAdded') ?? DEFAULT_SHOW_NEWLY_ADDED;
@@ -432,14 +429,15 @@ async function retrieveStateData(stateManager) {
 }
 exports.retrieveStateData = retrieveStateData;
 // rome-ignore lint/suspicious/noExplicitAny: <explanation>
-async function setStateData(stateManager, data) {
+async function setStateData(stateManager, interceptor, data) {
     await setKavitaServer(stateManager, data['kavitaAddress'] ?? DEFAULT_KAVITA_SERVER_ADDRESS, data['kavitaAPIKey'] ?? DEFAULT_KAVITA_SERVER_API_KEY);
+    await interceptor.updateAuthorization();
     await setOptions(stateManager, data['showOnDeck'] ?? DEFAULT_SHOW_ON_DECK, data['showRecentlyUpdated'] ?? DEFAULT_SHOW_RECENTLY_UPDATED, data['showNewlyAdded'] ?? DEFAULT_SHOW_NEWLY_ADDED);
 }
 exports.setStateData = setStateData;
 async function setKavitaServer(stateManager, apiUri, apiKey) {
     await stateManager.store('kavitaAddress', apiUri);
-    await stateManager.store('kavitaAPI', apiUri + (apiUri.slice(-1) === '/' ? 'api' : '/api'));
+    await stateManager.store('kavitaAPIUrl', apiUri + (apiUri.slice(-1) === '/' ? 'api' : '/api'));
     await stateManager.keychain.store('kavitaAPIKey', apiKey);
 }
 async function setOptions(stateManager, showOnDeck, showRecentlyUpdated, showNewlyAdded) {
@@ -456,17 +454,17 @@ const paperback_extensions_common_1 = require("paperback-extensions-common");
 const Settings_1 = require("./Settings");
 const Common_1 = require("./Common");
 exports.KavyaInfo = {
-    version: "0.2.0",
-    name: "Kavya",
-    icon: "icon.png",
-    author: "ACK72",
-    authorWebsite: "https://github.com/ACK72",
-    description: "Kavita client extension for Paperback",
+    version: '1.0.0',
+    name: 'Kavya',
+    icon: 'icon.png',
+    author: 'ACK72',
+    authorWebsite: 'https://github.com/ACK72',
+    description: 'Kavita client extension for Paperback',
     contentRating: paperback_extensions_common_1.ContentRating.EVERYONE,
-    websiteBaseURL: "https://www.kavitareader.com/",
+    websiteBaseURL: 'https://www.kavitareader.com/',
     sourceTags: [
         {
-            text: "Kavita",
+            text: 'Kavita',
             type: paperback_extensions_common_1.TagType.GREEN,
         },
     ],
@@ -476,16 +474,22 @@ class KavitaRequestInterceptor {
         this.stateManager = stateManager;
         this.authorization = '';
     }
+    async isServerAvailable() {
+        if (this.authorization === '') {
+            this.updateAuthorization();
+        }
+        return this.authorization.startsWith('Bearer ');
+    }
+    async updateAuthorization() {
+        this.authorization = await (0, Common_1.getAuthorizationString)(this.stateManager);
+    }
     async interceptResponse(response) {
         return response;
     }
     async interceptRequest(request) {
-        if (this.authorization === '') {
-            this.authorization = await (0, Common_1.getAuthorizationString)(this.stateManager);
-        }
         request.headers = {
-            "Authorization": this.authorization,
-            "Content-Type": typeof request.data === "string" ? "application/json" : "text/html"
+            'Authorization': this.authorization,
+            'Content-Type': typeof request.data === 'string' ? 'application/json' : 'text/html'
         };
         return request;
     }
@@ -495,46 +499,57 @@ class Kavya extends paperback_extensions_common_1.Source {
     constructor() {
         super(...arguments);
         this.stateManager = createSourceStateManager({});
+        this.interceptor = new KavitaRequestInterceptor(this.stateManager);
         this.requestManager = createRequestManager({
             requestsPerSecond: 4,
             requestTimeout: 20000,
-            interceptor: new KavitaRequestInterceptor(this.stateManager),
+            interceptor: this.interceptor,
         });
     }
     async getSourceMenu() {
         return createSection({
-            id: "main",
-            header: "Source Settings",
+            id: 'main',
+            header: 'Source Settings',
             rows: async () => [
-                (0, Settings_1.serverSettingsMenu)(this.stateManager)
+                (0, Settings_1.serverSettingsMenu)(this.stateManager, this.interceptor)
             ],
         });
     }
     async getMangaDetails(mangaId) {
-        const kavitaAPI = await (0, Common_1.getKavitaAPI)(this.stateManager);
-        const request = createRequestObject({
-            url: `${kavitaAPI}/Series/${mangaId}`,
-            method: "GET",
+        const kavitaAPIUrl = await (0, Common_1.getKavitaAPIUrl)(this.stateManager);
+        const seriesRequest = createRequestObject({
+            url: `${kavitaAPIUrl}/Series/${mangaId}`,
+            method: 'GET',
         });
-        const response = await this.requestManager.schedule(request, 1);
-        const result = typeof response.data === "string" ? JSON.parse(response.data) : response.data;
+        const metadataRequest = createRequestObject({
+            url: `${kavitaAPIUrl}/Series/metadata`,
+            param: `?seriesId=${mangaId}`,
+            method: 'GET',
+        });
+        const seriesResponse = await this.requestManager.schedule(seriesRequest, 1);
+        const seriesResult = typeof seriesResponse.data === 'string' ? JSON.parse(seriesResponse.data) : seriesResponse.data;
+        const metadataResponse = await this.requestManager.schedule(metadataRequest, 1);
+        const metadataResult = typeof metadataResponse.data === 'string' ? JSON.parse(metadataResponse.data) : metadataResponse.data;
         return createManga({
             id: mangaId,
-            titles: [result.name],
-            image: `${kavitaAPI}/image/series-cover?seriesId=${mangaId}`,
-            desc: "",
+            titles: [seriesResult.name],
+            image: `${kavitaAPIUrl}/image/series-cover?seriesId=${mangaId}`,
+            rating: seriesResult.userRating,
             status: paperback_extensions_common_1.MangaStatus.UNKNOWN,
+            covers: [`${kavitaAPIUrl}/image/series-cover?seriesId=${mangaId}`],
+            desc: metadataResult.summary,
+            lastUpdate: seriesResult.lastChapterAdded
         });
     }
     async getChapters(mangaId) {
-        const kavitaAPI = await (0, Common_1.getKavitaAPI)(this.stateManager);
+        const kavitaAPIUrl = await (0, Common_1.getKavitaAPIUrl)(this.stateManager);
         const request = createRequestObject({
-            url: `${kavitaAPI}/Series/volumes`,
+            url: `${kavitaAPIUrl}/Series/volumes`,
             param: `?seriesId=${mangaId}`,
-            method: "GET",
+            method: 'GET',
         });
         const response = await this.requestManager.schedule(request, 1);
-        const result = typeof response.data === "string" ? JSON.parse(response.data) : response.data;
+        const result = typeof response.data === 'string' ? JSON.parse(response.data) : response.data;
         const chapters = [];
         for (const volume of result) {
             for (const chapter of volume.chapters) {
@@ -542,7 +557,6 @@ class Kavya extends paperback_extensions_common_1.Source {
                     id: `${chapter.id}`,
                     mangaId: mangaId,
                     chapNum: volume.number,
-                    //chapNum: chapter.id,
                     name: volume.name,
                     //volume: chapter.volumeId,
                     // @ts-ignore
@@ -553,17 +567,17 @@ class Kavya extends paperback_extensions_common_1.Source {
         return chapters;
     }
     async getChapterDetails(mangaId, chapterId) {
-        const kavitaAPI = await (0, Common_1.getKavitaAPI)(this.stateManager);
+        const kavitaAPIUrl = await (0, Common_1.getKavitaAPIUrl)(this.stateManager);
         const request = createRequestObject({
-            url: `${kavitaAPI}/Series/chapter`,
+            url: `${kavitaAPIUrl}/Series/chapter`,
             param: `?chapterId=${chapterId}`,
-            method: "GET",
+            method: 'GET',
         });
         const response = await this.requestManager.schedule(request, 1);
-        const result = typeof response.data === "string" ? JSON.parse(response.data) : response.data;
+        const result = typeof response.data === 'string' ? JSON.parse(response.data) : response.data;
         const pages = [];
-        for (let i = 0; i < result.pages; i++) {
-            pages.push(`${kavitaAPI}/Reader/image?chapterId=${chapterId}&page=${i}&extractPdf=true`);
+        for (let i = 0; i <= result.pages; i++) {
+            pages.push(`${kavitaAPIUrl}/Reader/image?chapterId=${chapterId}&page=${i}&extractPdf=true`);
         }
         return createChapterDetails({
             id: chapterId,
@@ -576,48 +590,107 @@ class Kavya extends paperback_extensions_common_1.Source {
     // rome-ignore lint/suspicious/noExplicitAny: <explanation>
     metadata) {
         // This function is also called when the user search in an other source. It should not throw if the server is unavailable.
-        const kavitaAPI = await (0, Common_1.getKavitaAPI)(this.stateManager);
-        if (kavitaAPI === null) {
-            (0, Common_1.log)("searchRequest failed because server settings are unset");
+        if (!(await this.interceptor.isServerAvailable())) {
+            (0, Common_1.log)('searchRequest failed because server settings are invalid');
             return createPagedResults({
                 results: (0, Common_1.getServerUnavailableMangaTiles)(),
             });
         }
-        const request = createRequestObject({
-            url: `${kavitaAPI}/Search/search`,
-            param: `?queryString=${encodeURIComponent(searchQuery.title ?? "''")}`,
-            method: "GET"
+        const kavitaAPIUrl = await (0, Common_1.getKavitaAPIUrl)(this.stateManager);
+        const ids = [];
+        let tiles = [];
+        const titleRequest = createRequestObject({
+            url: `${kavitaAPIUrl}/Search/search`,
+            param: `?queryString=${encodeURIComponent(searchQuery.title ?? '""')}`,
+            method: 'GET'
         });
         // We don't want to throw if the server is unavailable
-        let response;
-        let result;
-        const tiles = [];
-        try {
-            response = await this.requestManager.schedule(request, 1);
-            result = JSON.parse(response.data);
-            for (const manga of result.series) {
-                tiles.push(createMangaTile({
-                    id: `${manga.seriesId}`,
-                    title: createIconText({ text: manga.name }),
-                    image: `${kavitaAPI}/image/series-cover?seriesId=${manga.seriesId}`,
-                }));
-            }
+        const titleResponse = await this.requestManager.schedule(titleRequest, 1);
+        const titleResult = JSON.parse(titleResponse.data);
+        for (const manga of titleResult.series) {
+            ids.push(manga.seriesId);
+            tiles.push(createMangaTile({
+                id: `${manga.seriesId}`,
+                title: createIconText({ text: manga.name }),
+                image: `${kavitaAPIUrl}/image/series-cover?seriesId=${manga.seriesId}`
+            }));
         }
-        catch (error) {
-            (0, Common_1.log)(`searchRequest failed with error: ${error}`);
-            return createPagedResults({
-                results: (0, Common_1.getServerUnavailableMangaTiles)(),
+        if (typeof searchQuery.includedTags !== 'undefined') {
+            tiles = [];
+            // rome-ignore lint/suspicious/noExplicitAny: <explanation>
+            let body = { genres: [], tags: [] };
+            searchQuery.includedTags.forEach(async (tag) => {
+                switch (tag.id.split('-')[0]) {
+                    case 'genres':
+                        body.genres.push(parseInt(tag.id.split('-')[1] ?? '0'));
+                        break;
+                    case 'tags':
+                        body.tags.push(parseInt(tag.id.split('-')[1] ?? '0'));
+                        break;
+                    default:
+                }
             });
+            const tagRequst = createRequestObject({
+                url: `${kavitaAPIUrl}/Series/all`,
+                data: JSON.stringify(body),
+                method: 'POST'
+            });
+            const tagResponse = await this.requestManager.schedule(tagRequst, 1);
+            const tagResult = JSON.parse(tagResponse.data);
+            for (const manga of tagResult) {
+                if (ids.includes(manga.id)) {
+                    tiles.push(createMangaTile({
+                        id: `${manga.id}`,
+                        title: createIconText({ text: manga.name }),
+                        image: `${kavitaAPIUrl}/image/series-cover?seriesId=${manga.id}`,
+                    }));
+                }
+            }
         }
         return createPagedResults({
             results: tiles
         });
     }
+    async getSearchTags() {
+        // This function is also called when the user search in an other source. It should not throw if the server is unavailable.
+        if (!(await this.interceptor.isServerAvailable())) {
+            (0, Common_1.log)('getSearchTags failed because server settings are invalid');
+            return [];
+        }
+        const kavitaAPIUrl = await (0, Common_1.getKavitaAPIUrl)(this.stateManager);
+        const tags = ['genres', 'tags'];
+        const tagSections = [];
+        for (const [i, tag] of tags.entries()) {
+            const request = createRequestObject({
+                url: `${kavitaAPIUrl}/Metadata/${tag}`,
+                method: 'GET',
+            });
+            const response = await this.requestManager.schedule(request, 1);
+            const result = typeof response.data === 'string' ? JSON.parse(response.data) : response.data;
+            tagSections.push(createTagSection({
+                id: `${i}`,
+                label: tag,
+                // rome-ignore lint/suspicious/noExplicitAny: <explanation>
+                tags: result.map((item) => createTag({ id: `${tag}-${item.id}`, label: item.title }))
+            }));
+        }
+        return tagSections;
+    }
     async getHomePageSections(sectionCallback) {
         // This function is called on the homepage and should not throw if the server is unavailable
-        // We won't use `await this.getKavitaAPI()` as we do not want to throw an error on
+        if (!(await this.interceptor.isServerAvailable())) {
+            (0, Common_1.log)('getHomePageSections failed because server settings are invalid');
+            sectionCallback(createHomeSection({
+                id: 'placeholder-id',
+                title: 'Library',
+                items: (0, Common_1.getServerUnavailableMangaTiles)(),
+                view_more: false
+            }));
+            return;
+        }
+        // We won't use `await this.getKavitaAPIUrl()` as we do not want to throw an error on
         // the homepage when server settings are not set
-        const kavitaAPI = await (0, Common_1.getKavitaAPI)(this.stateManager);
+        const kavitaAPIUrl = await (0, Common_1.getKavitaAPIUrl)(this.stateManager);
         const { showOnDeck, showRecentlyUpdated, showNewlyAdded } = await (0, Common_1.getOptions)(this.stateManager);
         // The source define two homepage sections: new and latest
         const sections = [];
@@ -643,15 +716,11 @@ class Kavya extends paperback_extensions_common_1.Source {
             }));
         }
         const request = createRequestObject({
-            url: `${kavitaAPI}/Library`,
-            method: "GET",
+            url: `${kavitaAPIUrl}/Library`,
+            method: 'GET',
         });
         const response = await this.requestManager.schedule(request, 1);
-        if (response.status !== 200) {
-            (0, Common_1.log)(`getHomePageSections failed with response status: ${response.status}`);
-            return;
-        }
-        const result = typeof response.data === "string" ? JSON.parse(response.data) : response.data;
+        const result = typeof response.data === 'string' ? JSON.parse(response.data) : response.data;
         for (const library of result) {
             sections.push(createHomeSection({
                 id: `${library.id}`,
@@ -661,85 +730,90 @@ class Kavya extends paperback_extensions_common_1.Source {
         }
         const promises = [];
         for (const section of sections) {
-            sectionCallback(section);
             // rome-ignore lint/suspicious/noExplicitAny: <explanation>
             // rome-ignore lint/style/useSingleVarDeclarator: <explanation>
             let apiPath, body = {}, id = 'id', title = 'name';
             switch (section.id) {
                 case 'ondeck':
-                    apiPath = `${kavitaAPI}/Series/on-deck`;
+                    apiPath = `${kavitaAPIUrl}/Series/on-deck`;
                     break;
                 case 'recentlyupdated':
-                    apiPath = `${kavitaAPI}/Series/recently-updated-series`;
+                    apiPath = `${kavitaAPIUrl}/Series/recently-updated-series`;
                     id = 'seriesId', title = 'seriesName';
                     break;
                 case 'newlyadded':
-                    apiPath = `${kavitaAPI}/Series/recently-added`;
+                    apiPath = `${kavitaAPIUrl}/Series/recently-added`;
                     break;
                 default:
-                    apiPath = `${kavitaAPI}/Series/all`;
+                    apiPath = `${kavitaAPIUrl}/Series/all`;
                     body = { 'libraries': [parseInt(section.id)] };
                     break;
             }
             const request = createRequestObject({
                 url: apiPath,
                 data: JSON.stringify(body),
-                method: "POST",
+                method: 'POST',
             });
             // Get the section data
             promises.push(this.requestManager.schedule(request, 1).then((response) => {
-                let result = typeof response.data === "string" ? JSON.parse(response.data) : response.data;
+                let result = typeof response.data === 'string' ? JSON.parse(response.data) : response.data;
                 const tiles = [];
                 for (const series of result) {
                     tiles.push(createMangaTile({
                         id: `${series[id]}`,
                         title: createIconText({ text: series[title] }),
-                        image: `${kavitaAPI}/image/series-cover?seriesId=${series[id]}`
+                        image: `${kavitaAPIUrl}/image/series-cover?seriesId=${series[id]}`
                     }));
                 }
-                section.items = tiles;
-                sectionCallback(section);
+                if (tiles.length > 0) {
+                    section.items = tiles;
+                }
             }));
         }
         // Make sure the function completes
         await Promise.all(promises);
+        for (const section of sections) {
+            if (typeof section.items !== 'undefined' && section.items.length > 0) {
+                sectionCallback(section);
+            }
+        }
     }
     async getViewMoreItems(homepageSectionId, 
     // rome-ignore lint/suspicious/noExplicitAny: <explanation>
     metadata) {
-        const kavitaAPI = await (0, Common_1.getKavitaAPI)(this.stateManager);
+        const kavitaAPIUrl = await (0, Common_1.getKavitaAPIUrl)(this.stateManager);
         // rome-ignore lint/suspicious/noExplicitAny: <explanation>
         // rome-ignore lint/style/useSingleVarDeclarator: <explanation>
         let apiPath, body = {}, id = 'id', title = 'name';
         switch (homepageSectionId) {
             case 'ondeck':
-                apiPath = `${kavitaAPI}/Series/on-deck`;
+                apiPath = `${kavitaAPIUrl}/Series/on-deck`;
                 break;
             case 'recentlyupdated':
-                apiPath = `${kavitaAPI}/Series/recently-updated-series`;
+                apiPath = `${kavitaAPIUrl}/Series/recently-updated-series`;
                 id = 'seriesId', title = 'seriesName';
                 break;
             case 'newlyadded':
-                apiPath = `${kavitaAPI}/Series/recently-added`;
+                apiPath = `${kavitaAPIUrl}/Series/recently-added`;
                 break;
             default:
-                apiPath = `${kavitaAPI}/Series/all`;
+                apiPath = `${kavitaAPIUrl}/Series/all`;
                 body = { 'libraries': [parseInt(homepageSectionId)] };
                 break;
         }
         const request = createRequestObject({
             url: apiPath,
             data: JSON.stringify(body),
-            method: "POST",
+            method: 'POST',
         });
         const response = await this.requestManager.schedule(request, 1);
-        const result = typeof response.data === "string" ? JSON.parse(response.data) : response.data;
+        const result = typeof response.data === 'string' ? JSON.parse(response.data) : response.data;
         const tiles = [];
         for (const series of result) {
             tiles.push(createMangaTile({
                 id: `${series[id]}`,
                 title: createIconText({ text: series[title] }),
-                image: `${kavitaAPI}/image/series-cover?seriesId=${series[id]}`
+                image: `${kavitaAPIUrl}/image/series-cover?seriesId=${series[id]}`
             }));
         }
         return createPagedResults({
@@ -756,14 +830,14 @@ exports.serverSettingsMenu = void 0;
 const Common_1 = require("./Common");
 /* UI definition */
 // NOTE: Submitted data won't be tested
-const serverSettingsMenu = (stateManager) => {
+const serverSettingsMenu = (stateManager, interceptor) => {
     return createNavigationButton({
         id: "server_settings",
         value: "",
         label: "Server Settings",
         form: createForm({
             // rome-ignore lint/suspicious/noExplicitAny: <explanation>
-            onSubmit: async (values) => (0, Common_1.setStateData)(stateManager, values),
+            onSubmit: async (values) => (0, Common_1.setStateData)(stateManager, interceptor, values),
             validate: async () => true,
             sections: async () => [
                 createSection({
