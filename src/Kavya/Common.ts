@@ -1,6 +1,7 @@
 import {
 	SourceStateManager,
-} from "paperback-extensions-common";
+} from 'paperback-extensions-common';
+import { KavitaRequestInterceptor } from './Kavya';
 
 export function log(message: string) {
 	console.log(`[Kavya] ${message}`);
@@ -10,10 +11,10 @@ export function getServerUnavailableMangaTiles() {
 	// This tile is used as a placeholder when the server is unavailable
 	return [
 		createMangaTile({
-			id: "placeholder-id",
-			title: createIconText({ text: "Server" }),
-			image: "",
-			subtitleText: createIconText({ text: "unavailable" }),
+			id: 'placeholder-id',
+			title: createIconText({ text: 'Server' }),
+			image: '',
+			subtitleText: createIconText({ text: 'unavailable' }),
 		}),
 	];
 }
@@ -38,10 +39,6 @@ export async function getAuthorizationString(stateManager: SourceStateManager): 
 	const apiUri = (await stateManager.retrieve('kavitaAPI') as string) ?? DEFAULT_KAVITA_API
 	const apiKey = (await stateManager.keychain.retrieve('kavitaAPIKey') as string) ?? DEFAULT_KAVITA_SERVER_API_KEY
 
-	if (apiKey === '') {
-		return ''
-	}
-
 	const manager = createRequestManager({
         requestsPerSecond: 4,
         requestTimeout: 20000
@@ -49,13 +46,12 @@ export async function getAuthorizationString(stateManager: SourceStateManager): 
 	const request = createRequestObject({
 		url: `${apiUri}/Plugin/authenticate`,
 		param: `?apiKey=${apiKey}&pluginName=Kavya`,
-		method: "POST",
+		method: 'POST',
 	});
-
 	const response = await manager.schedule(request, 1);
-	const result = typeof response.data === "string" ? JSON.parse(response.data) : response.data;
-	
-	return `Bearer ${result.token}`;
+	const token = typeof response.data === 'string' ? JSON.parse(response.data).token : undefined;
+
+	return token ? `Bearer ${token}` : '';
 }
 
 export async function getOptions(stateManager: SourceStateManager): Promise<{ showOnDeck: boolean; showRecentlyUpdated: boolean; showNewlyAdded: boolean; }> {
@@ -68,7 +64,7 @@ export async function getOptions(stateManager: SourceStateManager): Promise<{ sh
 
 export async function retrieveStateData(stateManager: SourceStateManager) {
 	const kavitaURL = (await stateManager.retrieve('kavitaAddress') as string) ?? DEFAULT_KAVITA_SERVER_ADDRESS
-	const kavitaAPIKey = (await stateManager.retrieve('kavitaAPIKey') as string) ?? DEFAULT_KAVITA_SERVER_API_KEY
+	const kavitaAPIKey = (await stateManager.keychain.retrieve('kavitaAPIKey') as string) ?? DEFAULT_KAVITA_SERVER_API_KEY
 
 	const showOnDeck = (await stateManager.retrieve('showOnDeck') as boolean) ?? DEFAULT_SHOW_ON_DECK
 	const showRecentlyUpdated = (await stateManager.retrieve('showRecentlyUpdated') as boolean) ?? DEFAULT_SHOW_RECENTLY_UPDATED
@@ -78,12 +74,13 @@ export async function retrieveStateData(stateManager: SourceStateManager) {
 }
 
 // rome-ignore lint/suspicious/noExplicitAny: <explanation>
-export async function setStateData(stateManager: SourceStateManager, data: Record<string, any>) {
+export async function setStateData(stateManager: SourceStateManager, interceptor: KavitaRequestInterceptor, data: Record<string, any>) {
 	await setKavitaServer(
 		stateManager,
 		data['kavitaAddress'] ?? DEFAULT_KAVITA_SERVER_ADDRESS,
 		data['kavitaAPIKey'] ?? DEFAULT_KAVITA_SERVER_API_KEY,
 	)
+	await interceptor.updateAuthorization();
 	await setOptions(
 		stateManager,
 		data['showOnDeck'] ?? DEFAULT_SHOW_ON_DECK,

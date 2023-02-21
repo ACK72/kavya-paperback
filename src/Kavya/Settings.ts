@@ -6,11 +6,13 @@ import {
 	retrieveStateData,
 	setStateData,
 } from "./Common";
+import { KavitaRequestInterceptor } from "./Kavya";
 
 /* UI definition */
 // NOTE: Submitted data won't be tested
 export const serverSettingsMenu = (
-	stateManager: SourceStateManager
+	stateManager: SourceStateManager,
+	interceptor: KavitaRequestInterceptor
 ): NavigationButton => {
 	return createNavigationButton({
 		id: "server_settings",
@@ -18,7 +20,7 @@ export const serverSettingsMenu = (
 		label: "Server Settings",
 		form: createForm({
 			// rome-ignore lint/suspicious/noExplicitAny: <explanation>
-			onSubmit: async (values: any) => setStateData(stateManager, values),
+			onSubmit: async (values: any) => setStateData(stateManager, interceptor, values),
 			validate: async () => true,
 			sections: async () => [
 				createSection({

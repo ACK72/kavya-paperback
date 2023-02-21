@@ -16,30 +16,30 @@ import {
 	SourceInfo,
 	SourceStateManager,
 	TagType
-} from "paperback-extensions-common";
+} from 'paperback-extensions-common';
 import {
 	serverSettingsMenu
-} from "./Settings";
+} from './Settings';
 import {
 	getAuthorizationString,
 	getKavitaAPI,
 	getOptions,
 	getServerUnavailableMangaTiles,
 	log
-} from "./Common";
+} from './Common';
 
 export const KavyaInfo: SourceInfo = {
-	version: "0.2.0",
-	name: "Kavya",
-	icon: "icon.png",
-	author: "ACK72",
-	authorWebsite: "https://github.com/ACK72",
-	description: "Kavita client extension for Paperback",
+	version: '0.2.0',
+	name: 'Kavya',
+	icon: 'icon.png',
+	author: 'ACK72',
+	authorWebsite: 'https://github.com/ACK72',
+	description: 'Kavita client extension for Paperback',
 	contentRating: ContentRating.EVERYONE,
-	websiteBaseURL: "https://www.kavitareader.com/",
+	websiteBaseURL: 'https://www.kavitareader.com/',
 	sourceTags: [
 		{
-			text: "Kavita",
+			text: 'Kavita',
 			type: TagType.GREEN,
 		},
 	],
@@ -54,18 +54,26 @@ export class KavitaRequestInterceptor implements RequestInterceptor {
 		this.authorization = '';
 	}
 
+	async isServerAvailable(): Promise<boolean> {
+		if (this.authorization === '') {
+			this.updateAuthorization();
+		}
+
+		return this.authorization.startsWith('Bearer ');
+	}
+
+	async updateAuthorization(): Promise<void> {
+		this.authorization = await getAuthorizationString(this.stateManager);
+	}
+
 	async interceptResponse(response: Response): Promise<Response> {
 		return response;
 	}
 
-	async interceptRequest(request: Request): Promise<Request> {
-		if (this.authorization === '') {
-			this.authorization = await getAuthorizationString(this.stateManager);
-		}
-		
+	async interceptRequest(request: Request): Promise<Request> {		
 		request.headers = {
-			"Authorization": this.authorization,
-			"Content-Type": typeof request.data === "string" ? "application/json" : "text/html"
+			'Authorization': this.authorization,
+			'Content-Type': typeof request.data === 'string' ? 'application/json' : 'text/html'
 		}
 
 		return request;
@@ -74,19 +82,20 @@ export class KavitaRequestInterceptor implements RequestInterceptor {
 
 export class Kavya extends Source {
 	stateManager = createSourceStateManager({});
+	interceptor = new KavitaRequestInterceptor(this.stateManager);
 	
 	requestManager = createRequestManager({
 		requestsPerSecond: 4,
 		requestTimeout: 20000,
-		interceptor: new KavitaRequestInterceptor(this.stateManager),
+		interceptor: this.interceptor,
 	});
 
 	override async getSourceMenu(): Promise<Section> {
 		return createSection({
-			id: "main",
-			header: "Source Settings",
+			id: 'main',
+			header: 'Source Settings',
 			rows: async () => [
-				serverSettingsMenu(this.stateManager)
+				serverSettingsMenu(this.stateManager, this.interceptor)
 			],
 		});
 	}
@@ -96,17 +105,17 @@ export class Kavya extends Source {
 
 		const request = createRequestObject({
 			url: `${kavitaAPI}/Series/${mangaId}`,
-			method: "GET",
+			method: 'GET',
 		});
 
 		const response = await this.requestManager.schedule(request, 1);
-		const result = typeof response.data === "string" ? JSON.parse(response.data) : response.data;
+		const result = typeof response.data === 'string' ? JSON.parse(response.data) : response.data;
 
 		return createManga({
 			id: mangaId,
 			titles: [result.name],
 			image: `${kavitaAPI}/image/series-cover?seriesId=${mangaId}`,
-			desc: "",
+			desc: '',
 			status: MangaStatus.UNKNOWN,
 		});
 	}
@@ -117,11 +126,11 @@ export class Kavya extends Source {
 		const request = createRequestObject({
 			url: `${kavitaAPI}/Series/volumes`,
 			param: `?seriesId=${mangaId}`,
-			method: "GET",
+			method: 'GET',
 		});
 
 		const response = await this.requestManager.schedule(request, 1);
-		const result = typeof response.data === "string" ? JSON.parse(response.data) : response.data;
+		const result = typeof response.data === 'string' ? JSON.parse(response.data) : response.data;
 
 		const chapters: Chapter[] = [];
 
@@ -154,11 +163,11 @@ export class Kavya extends Source {
 		const request = createRequestObject({
 			url: `${kavitaAPI}/Series/chapter`,
 			param: `?chapterId=${chapterId}`,
-			method: "GET",
+			method: 'GET',
 		});
 
 		const response = await this.requestManager.schedule(request, 1);
-		const result = typeof response.data === "string" ? JSON.parse(response.data) : response.data;
+		const result = typeof response.data === 'string' ? JSON.parse(response.data) : response.data;
 
 		const pages: string[] = [];
 		for (let i = 0; i < result.pages; i++) {
@@ -179,19 +188,19 @@ export class Kavya extends Source {
 		metadata: any
 	): Promise<PagedResults> {
 		// This function is also called when the user search in an other source. It should not throw if the server is unavailable.
-		const kavitaAPI = await getKavitaAPI(this.stateManager);
+		if (!(await this.interceptor.isServerAvailable())) {
+			log('searchRequest failed because server settings are invalid');
 
-		if (kavitaAPI === null) {
-			log("searchRequest failed because server settings are unset");
 			return createPagedResults({
 				results: getServerUnavailableMangaTiles(),
 			});
 		}
 
+		const kavitaAPI = await getKavitaAPI(this.stateManager);
 		const request = createRequestObject({
 			url: `${kavitaAPI}/Search/search`,
-			param: `?queryString=${encodeURIComponent(searchQuery.title ?? "''")}`,
-			method: "GET"
+			param: `?queryString=${encodeURIComponent(searchQuery.title ?? '""')}`,
+			method: 'GET'
 		});
 
 		// We don't want to throw if the server is unavailable
@@ -229,6 +238,18 @@ export class Kavya extends Source {
 		sectionCallback: (section: HomeSection) => void
 	): Promise<void> {
 		// This function is called on the homepage and should not throw if the server is unavailable
+		if (!(await this.interceptor.isServerAvailable())) {
+			log('getHomePageSections failed because server settings are invalid');
+			sectionCallback(
+				createHomeSection({ 
+					id: 'placeholder-id',
+					title: 'Library',
+					view_more: false,
+					items: getServerUnavailableMangaTiles()
+				})
+			);
+			return;
+		}
 
 		// We won't use `await this.getKavitaAPI()` as we do not want to throw an error on
 		// the homepage when server settings are not set
@@ -264,17 +285,11 @@ export class Kavya extends Source {
 
 		const request = createRequestObject({
 			url: `${kavitaAPI}/Library`,
-			method: "GET",
+			method: 'GET',
 		});
 
 		const response = await this.requestManager.schedule(request, 1);
-
-		if (response.status !== 200) {
-			log(`getHomePageSections failed with response status: ${response.status}`);
-			return;
-		}
-
-		const result = typeof response.data === "string" ? JSON.parse(response.data) : response.data;
+		const result = typeof response.data === 'string' ? JSON.parse(response.data) : response.data;
 		
 		for (const library of result) {
 			sections.push(createHomeSection({
@@ -287,8 +302,6 @@ export class Kavya extends Source {
 		const promises: Promise<void>[] = [];
 
 		for (const section of sections) {
-			sectionCallback(section);
-
 			// rome-ignore lint/suspicious/noExplicitAny: <explanation>
 			// rome-ignore lint/style/useSingleVarDeclarator: <explanation>
 			let apiPath: string, body: any = {}, id: string = 'id', title: string = 'name';
@@ -312,13 +325,13 @@ export class Kavya extends Source {
 			const request = createRequestObject({
 				url: apiPath,
 				data: JSON.stringify(body),
-				method: "POST",
+				method: 'POST',
 			});
 
 			// Get the section data
 			promises.push(
 				this.requestManager.schedule(request, 1).then((response) => {
-					let result = typeof response.data === "string" ? JSON.parse(response.data) : response.data;
+					let result = typeof response.data === 'string' ? JSON.parse(response.data) : response.data;
 
 					const tiles: MangaTile[] = [];
 					
@@ -331,15 +344,21 @@ export class Kavya extends Source {
 							})
 						);
 					}
-
-					section.items = tiles;
-					sectionCallback(section);
+					
+					if (tiles.length > 0) {
+						section.items = tiles;
+					}
 				})
 			);
 		}
 
 		// Make sure the function completes
 		await Promise.all(promises);
+		for (const section of sections) {
+			if (typeof section.items !== 'undefined' && section.items.length > 0) {
+				sectionCallback(section);
+			}
+		}
 	}
 
 	override async getViewMoreItems(
@@ -372,11 +391,11 @@ export class Kavya extends Source {
 		const request = createRequestObject({
 			url: apiPath,
 			data: JSON.stringify(body),
-			method: "POST",
+			method: 'POST',
 		});
 
 		const response = await this.requestManager.schedule(request, 1);
-		const result = typeof response.data === "string" ? JSON.parse(response.data) : response.data;
+		const result = typeof response.data === 'string' ? JSON.parse(response.data) : response.data;
 
 		const tiles: MangaTile[] = [];
 		
