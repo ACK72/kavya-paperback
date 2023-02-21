@@ -23,20 +23,19 @@ export function getServerUnavailableMangaTiles() {
 // KAVITA API STATE METHODS
 //
 const DEFAULT_KAVITA_SERVER_ADDRESS = 'https://demo.kavitareader.com'
+const DEFAULT_KAVITA_SERVER_API_URL = `${DEFAULT_KAVITA_SERVER_ADDRESS}/api`
 const DEFAULT_KAVITA_SERVER_API_KEY = ''
-
-const DEFAULT_KAVITA_API = `${DEFAULT_KAVITA_SERVER_ADDRESS}/api`
 
 const DEFAULT_SHOW_ON_DECK = true
 const DEFAULT_SHOW_RECENTLY_UPDATED = true
 const DEFAULT_SHOW_NEWLY_ADDED = true
 
-export async function getKavitaAPI(stateManager: SourceStateManager): Promise<string> {
-	return (await stateManager.retrieve('kavitaAPI') as string | undefined) ?? DEFAULT_KAVITA_API
+export async function getKavitaAPIUrl(stateManager: SourceStateManager): Promise<string> {
+	return (await stateManager.retrieve('kavitaAPIUrl') as string | undefined) ?? DEFAULT_KAVITA_SERVER_API_URL
 }
 
 export async function getAuthorizationString(stateManager: SourceStateManager): Promise<string> {
-	const apiUri = (await stateManager.retrieve('kavitaAPI') as string) ?? DEFAULT_KAVITA_API
+	const apiUri = (await stateManager.retrieve('kavitaAPIUrl') as string) ?? DEFAULT_KAVITA_SERVER_API_URL
 	const apiKey = (await stateManager.keychain.retrieve('kavitaAPIKey') as string) ?? DEFAULT_KAVITA_SERVER_API_KEY
 
 	const manager = createRequestManager({
@@ -54,7 +53,7 @@ export async function getAuthorizationString(stateManager: SourceStateManager): 
 	return token ? `Bearer ${token}` : '';
 }
 
-export async function getOptions(stateManager: SourceStateManager): Promise<{ showOnDeck: boolean; showRecentlyUpdated: boolean; showNewlyAdded: boolean; }> {
+export async function getOptions(stateManager: SourceStateManager): Promise<{ showOnDeck: boolean; showRecentlyUpdated: boolean; showNewlyAdded: boolean }> {
 	const showOnDeck = (await stateManager.retrieve('showOnDeck') as boolean) ?? DEFAULT_SHOW_ON_DECK
 	const showRecentlyUpdated = (await stateManager.retrieve('showRecentlyUpdated') as boolean) ?? DEFAULT_SHOW_RECENTLY_UPDATED
 	const showNewlyAdded = (await stateManager.retrieve('showNewlyAdded') as boolean) ?? DEFAULT_SHOW_NEWLY_ADDED
@@ -85,13 +84,13 @@ export async function setStateData(stateManager: SourceStateManager, interceptor
 		stateManager,
 		data['showOnDeck'] ?? DEFAULT_SHOW_ON_DECK,
 		data['showRecentlyUpdated'] ?? DEFAULT_SHOW_RECENTLY_UPDATED,
-		data['showNewlyAdded'] ?? DEFAULT_SHOW_NEWLY_ADDED
+		data['showNewlyAdded'] ?? DEFAULT_SHOW_NEWLY_ADDED,
 	)
 }
 
 async function setKavitaServer(stateManager: SourceStateManager, apiUri: string, apiKey: string) {
 	await stateManager.store('kavitaAddress', apiUri)
-	await stateManager.store('kavitaAPI', apiUri + (apiUri.slice(-1) === '/' ? 'api' : '/api'))
+	await stateManager.store('kavitaAPIUrl', apiUri + (apiUri.slice(-1) === '/' ? 'api' : '/api'))
 	await stateManager.keychain.store('kavitaAPIKey', apiKey)
 }
 
