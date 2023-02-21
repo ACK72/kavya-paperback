@@ -30,7 +30,7 @@ import {
 } from './Common';
 
 export const KavyaInfo: SourceInfo = {
-	version: '0.2.0',
+	version: '1.0.0',
 	name: 'Kavya',
 	icon: 'icon.png',
 	author: 'ACK72',
