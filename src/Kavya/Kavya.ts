@@ -15,6 +15,7 @@ import {
 	Source,
 	SourceInfo,
 	SourceStateManager,
+	TagSection,
 	TagType
 } from 'paperback-extensions-common';
 import {
@@ -103,20 +104,31 @@ export class Kavya extends Source {
 	async getMangaDetails(mangaId: string): Promise<Manga> {
 		const kavitaAPIUrl = await getKavitaAPIUrl(this.stateManager);
 
-		const request = createRequestObject({
+		const seriesRequest = createRequestObject({
 			url: `${kavitaAPIUrl}/Series/${mangaId}`,
 			method: 'GET',
 		});
+		const metadataRequest = createRequestObject({
+			url: `${kavitaAPIUrl}/Series/metadata`,
+			param: `?seriesId=${mangaId}`,
+			method: 'GET',
+		});
 
-		const response = await this.requestManager.schedule(request, 1);
-		const result = typeof response.data === 'string' ? JSON.parse(response.data) : response.data;
+		const seriesResponse = await this.requestManager.schedule(seriesRequest, 1);
+		const seriesResult = typeof seriesResponse.data === 'string' ? JSON.parse(seriesResponse.data) : seriesResponse.data;
+
+		const metadataResponse = await this.requestManager.schedule(metadataRequest, 1);
+		const metadataResult = typeof metadataResponse.data === 'string' ? JSON.parse(metadataResponse.data) : metadataResponse.data;
 
 		return createManga({
 			id: mangaId,
-			titles: [result.name],
+			titles: [seriesResult.name],
 			image: `${kavitaAPIUrl}/image/series-cover?seriesId=${mangaId}`,
-			desc: '',
+			rating: seriesResult.userRating,
 			status: MangaStatus.UNKNOWN,
+			covers: [`${kavitaAPIUrl}/image/series-cover?seriesId=${mangaId}`],
+			desc: metadataResult.summary,
+			lastUpdate: seriesResult.lastChapterAdded
 		});
 	}
 
@@ -141,7 +153,6 @@ export class Kavya extends Source {
 						id: `${chapter.id}`,
 						mangaId: mangaId,
 						chapNum: volume.number,
-						//chapNum: chapter.id,
 						name: volume.name,
 						//volume: chapter.volumeId,
 						// @ts-ignore
@@ -195,43 +206,107 @@ export class Kavya extends Source {
 				results: getServerUnavailableMangaTiles(),
 			});
 		}
-
+		
 		const kavitaAPIUrl = await getKavitaAPIUrl(this.stateManager);
-		const request = createRequestObject({
+
+		const ids: string[] = [];
+		let tiles: MangaTile[] = [];
+
+		const titleRequest = createRequestObject({
 			url: `${kavitaAPIUrl}/Search/search`,
 			param: `?queryString=${encodeURIComponent(searchQuery.title ?? '""')}`,
 			method: 'GET'
 		});
 
 		// We don't want to throw if the server is unavailable
-		let response: Response;
-		let result;
+		const titleResponse = await this.requestManager.schedule(titleRequest, 1);
+		const titleResult = JSON.parse(titleResponse.data);
 
-		const tiles: MangaTile[] = [];
-
-		try {
-			response = await this.requestManager.schedule(request, 1);
-			result = JSON.parse(response.data);
-
-			for (const manga of result.series) {
-				tiles.push(
-					createMangaTile({
-						id: `${manga.seriesId}`,
-						title: createIconText({text: manga.name}),
-						image: `${kavitaAPIUrl}/image/series-cover?seriesId=${manga.seriesId}`,
-					})
-				);
-			}
-		} catch (error) {
-			log(`searchRequest failed with error: ${error}`);
-			return createPagedResults({
-				results: getServerUnavailableMangaTiles(),
-			});
+		for (const manga of titleResult.series) {
+			ids.push(manga.seriesId);
+			tiles.push(
+				createMangaTile({
+					id: `${manga.seriesId}`,
+					title: createIconText({text: manga.name}),
+					image: `${kavitaAPIUrl}/image/series-cover?seriesId=${manga.seriesId}`
+				})
+			);
 		}
-		
+
+		if (typeof searchQuery.includedTags !== 'undefined') {
+			tiles = [];
+
+			// rome-ignore lint/suspicious/noExplicitAny: <explanation>
+			let body: any = {genres: [], tags: []};
+			searchQuery.includedTags.forEach(async (tag) => {
+				switch (tag.id.split('-')[0]) {
+					case 'genres':
+						body.genres.push(parseInt(tag.id.split('-')[1] ?? '0'));
+						break;
+					case 'tags':
+						body.tags.push(parseInt(tag.id.split('-')[1] ?? '0'));
+						break;
+					default:
+				}
+			});
+
+			const tagRequst = createRequestObject({
+				url: `${kavitaAPIUrl}/Series/all`,
+				data: JSON.stringify(body),
+				method: 'POST'
+			});
+
+			const tagResponse = await this.requestManager.schedule(tagRequst, 1);
+			const tagResult = JSON.parse(tagResponse.data);
+
+			for (const manga of tagResult) {
+				if (ids.includes(manga.id)) {
+					tiles.push(
+						createMangaTile({
+							id: `${manga.id}`,
+							title: createIconText({text: manga.name}),
+							image: `${kavitaAPIUrl}/image/series-cover?seriesId=${manga.id}`,
+						})
+					);
+				}
+			}
+		}
+
 		return createPagedResults({
 			results: tiles
 		});
+	}
+
+	override async getSearchTags(): Promise<TagSection[]> {
+		// This function is also called when the user search in an other source. It should not throw if the server is unavailable.
+		if (!(await this.interceptor.isServerAvailable())) {
+			log('getSearchTags failed because server settings are invalid');
+			return [];
+		}
+
+		const kavitaAPIUrl = await getKavitaAPIUrl(this.stateManager);
+		
+		const tags: string[] = ['genres', 'tags'];
+		const tagSections: TagSection[] = [];
+
+		for (const [i, tag] of tags.entries()) {
+			const request = createRequestObject({
+				url: `${kavitaAPIUrl}/Metadata/${tag}`,
+				method: 'GET',
+			});
+
+			const response = await this.requestManager.schedule(request, 1);
+			const result = typeof response.data === 'string' ? JSON.parse(response.data) : response.data;
+
+			tagSections.push(createTagSection({
+				id: `${i}`,
+				label: tag,
+				// rome-ignore lint/suspicious/noExplicitAny: <explanation>
+				tags: result.map((item: any) => createTag({id: `${tag}-${item.id}`, label: item.title}))
+			}));
+		}
+		
+		return tagSections;
 	}
 
 	override async getHomePageSections(
@@ -244,8 +319,8 @@ export class Kavya extends Source {
 				createHomeSection({ 
 					id: 'placeholder-id',
 					title: 'Library',
-					view_more: false,
-					items: getServerUnavailableMangaTiles()
+					items: getServerUnavailableMangaTiles(),
+					view_more: false
 				})
 			);
 			return;
