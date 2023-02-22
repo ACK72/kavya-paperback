@@ -148,17 +148,17 @@ export class Kavya extends Source {
 
 		const chapters: Chapter[] = [];
 
-		for (const volume of result) {
+		for (const [i, volume] of result.entries()) {
 			for (const chapter of volume.chapters) {
 				chapters.push(
 					createChapter({
 						id: `${chapter.id}`,
 						mangaId: mangaId,
-						chapNum: volume.number,
-						name: volume.name,
+						chapNum: chapter.number === '0' ? i+1 : parseFloat(chapter.number),
+						name: chapter.files[0].filePath.split('/').pop().slice(0, -4),
 						//volume: chapter.volumeId,
 						// @ts-ignore
-						sortingIndex: volume.number,
+						sortingIndex: parseFloat(`${i}.${chapter.number}`)
 					})
 				);
 			}
@@ -278,7 +278,7 @@ export class Kavya extends Source {
 		// We won't use `await this.getKavitaAPIUrl()` as we do not want to throw an error on
 		// the homepage when server settings are not set
 		const kavitaAPIUrl = await getKavitaAPIUrl(this.stateManager);
-		const { showOnDeck, showRecentlyUpdated, showNewlyAdded } = await getOptions(this.stateManager);
+		const {showOnDeck, showRecentlyUpdated, showNewlyAdded} = await getOptions(this.stateManager);
 
 		// The source define two homepage sections: new and latest
 		const sections = [];
