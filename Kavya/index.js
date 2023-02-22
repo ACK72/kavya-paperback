@@ -391,6 +391,7 @@ const DEFAULT_KAVITA_SERVER_API_KEY = '';
 const DEFAULT_SHOW_ON_DECK = true;
 const DEFAULT_SHOW_RECENTLY_UPDATED = true;
 const DEFAULT_SHOW_NEWLY_ADDED = true;
+const DEFAULT_ENABLE_RECURSIVE_SEARCH = false;
 async function getKavitaAPIUrl(stateManager) {
     return await stateManager.retrieve('kavitaAPIUrl') ?? DEFAULT_KAVITA_SERVER_API_URL;
 }
@@ -416,7 +417,8 @@ async function getOptions(stateManager) {
     const showOnDeck = await stateManager.retrieve('showOnDeck') ?? DEFAULT_SHOW_ON_DECK;
     const showRecentlyUpdated = await stateManager.retrieve('showRecentlyUpdated') ?? DEFAULT_SHOW_RECENTLY_UPDATED;
     const showNewlyAdded = await stateManager.retrieve('showNewlyAdded') ?? DEFAULT_SHOW_NEWLY_ADDED;
-    return { showOnDeck, showRecentlyUpdated, showNewlyAdded };
+    const enableRecursiveSearch = await stateManager.retrieve('enableRecursiveSearch') ?? DEFAULT_ENABLE_RECURSIVE_SEARCH;
+    return { showOnDeck, showRecentlyUpdated, showNewlyAdded, enableRecursiveSearch };
 }
 exports.getOptions = getOptions;
 async function retrieveStateData(stateManager) {
@@ -425,14 +427,15 @@ async function retrieveStateData(stateManager) {
     const showOnDeck = await stateManager.retrieve('showOnDeck') ?? DEFAULT_SHOW_ON_DECK;
     const showRecentlyUpdated = await stateManager.retrieve('showRecentlyUpdated') ?? DEFAULT_SHOW_RECENTLY_UPDATED;
     const showNewlyAdded = await stateManager.retrieve('showNewlyAdded') ?? DEFAULT_SHOW_NEWLY_ADDED;
-    return { kavitaURL, kavitaAPIKey, showOnDeck, showRecentlyUpdated, showNewlyAdded };
+    const enableRecursiveSearch = await stateManager.retrieve('enableRecursiveSearch') ?? DEFAULT_ENABLE_RECURSIVE_SEARCH;
+    return { kavitaURL, kavitaAPIKey, showOnDeck, showRecentlyUpdated, showNewlyAdded, enableRecursiveSearch };
 }
 exports.retrieveStateData = retrieveStateData;
 // rome-ignore lint/suspicious/noExplicitAny: <explanation>
 async function setStateData(stateManager, interceptor, data) {
     await setKavitaServer(stateManager, data['kavitaAddress'] ?? DEFAULT_KAVITA_SERVER_ADDRESS, data['kavitaAPIKey'] ?? DEFAULT_KAVITA_SERVER_API_KEY);
     await interceptor.updateAuthorization();
-    await setOptions(stateManager, data['showOnDeck'] ?? DEFAULT_SHOW_ON_DECK, data['showRecentlyUpdated'] ?? DEFAULT_SHOW_RECENTLY_UPDATED, data['showNewlyAdded'] ?? DEFAULT_SHOW_NEWLY_ADDED);
+    await setOptions(stateManager, data['showOnDeck'] ?? DEFAULT_SHOW_ON_DECK, data['showRecentlyUpdated'] ?? DEFAULT_SHOW_RECENTLY_UPDATED, data['showNewlyAdded'] ?? DEFAULT_SHOW_NEWLY_ADDED, data['enableRecursiveSearch'] ?? DEFAULT_ENABLE_RECURSIVE_SEARCH);
 }
 exports.setStateData = setStateData;
 async function setKavitaServer(stateManager, apiUri, apiKey) {
@@ -440,10 +443,11 @@ async function setKavitaServer(stateManager, apiUri, apiKey) {
     await stateManager.store('kavitaAPIUrl', apiUri + (apiUri.slice(-1) === '/' ? 'api' : '/api'));
     await stateManager.keychain.store('kavitaAPIKey', apiKey);
 }
-async function setOptions(stateManager, showOnDeck, showRecentlyUpdated, showNewlyAdded) {
+async function setOptions(stateManager, showOnDeck, showRecentlyUpdated, showNewlyAdded, enableRecursiveSearch) {
     await stateManager.store('showOnDeck', showOnDeck);
     await stateManager.store('showRecentlyUpdated', showRecentlyUpdated);
     await stateManager.store('showNewlyAdded', showNewlyAdded);
+    await stateManager.store('enableRecursiveSearch', enableRecursiveSearch);
 }
 
 },{}],49:[function(require,module,exports){
@@ -453,8 +457,9 @@ exports.Kavya = exports.KavitaRequestInterceptor = exports.KavyaInfo = void 0;
 const paperback_extensions_common_1 = require("paperback-extensions-common");
 const Settings_1 = require("./Settings");
 const Common_1 = require("./Common");
+const Search_1 = require("./Search");
 exports.KavyaInfo = {
-    version: '1.0.0',
+    version: '1.1.0',
     name: 'Kavya',
     icon: 'icon.png',
     author: 'ACK72',
@@ -476,7 +481,7 @@ class KavitaRequestInterceptor {
     }
     async isServerAvailable() {
         if (this.authorization === '') {
-            this.updateAuthorization();
+            await this.updateAuthorization();
         }
         return this.authorization.startsWith('Bearer ');
     }
@@ -537,8 +542,8 @@ class Kavya extends paperback_extensions_common_1.Source {
             rating: seriesResult.userRating,
             status: paperback_extensions_common_1.MangaStatus.UNKNOWN,
             covers: [`${kavitaAPIUrl}/image/series-cover?seriesId=${mangaId}`],
-            desc: metadataResult.summary,
-            lastUpdate: seriesResult.lastChapterAdded
+            desc: metadataResult.summary.replace(/<[^>]+>/g, ''),
+            lastUpdate: new Date(seriesResult.lastChapterAdded)
         });
     }
     async getChapters(mangaId) {
@@ -589,67 +594,7 @@ class Kavya extends paperback_extensions_common_1.Source {
     async getSearchResults(searchQuery, 
     // rome-ignore lint/suspicious/noExplicitAny: <explanation>
     metadata) {
-        // This function is also called when the user search in an other source. It should not throw if the server is unavailable.
-        if (!(await this.interceptor.isServerAvailable())) {
-            (0, Common_1.log)('searchRequest failed because server settings are invalid');
-            return createPagedResults({
-                results: (0, Common_1.getServerUnavailableMangaTiles)(),
-            });
-        }
-        const kavitaAPIUrl = await (0, Common_1.getKavitaAPIUrl)(this.stateManager);
-        const ids = [];
-        let tiles = [];
-        const titleRequest = createRequestObject({
-            url: `${kavitaAPIUrl}/Search/search`,
-            param: `?queryString=${encodeURIComponent(searchQuery.title ?? '""')}`,
-            method: 'GET'
-        });
-        // We don't want to throw if the server is unavailable
-        const titleResponse = await this.requestManager.schedule(titleRequest, 1);
-        const titleResult = JSON.parse(titleResponse.data);
-        for (const manga of titleResult.series) {
-            ids.push(manga.seriesId);
-            tiles.push(createMangaTile({
-                id: `${manga.seriesId}`,
-                title: createIconText({ text: manga.name }),
-                image: `${kavitaAPIUrl}/image/series-cover?seriesId=${manga.seriesId}`
-            }));
-        }
-        if (typeof searchQuery.includedTags !== 'undefined') {
-            tiles = [];
-            // rome-ignore lint/suspicious/noExplicitAny: <explanation>
-            let body = { genres: [], tags: [] };
-            searchQuery.includedTags.forEach(async (tag) => {
-                switch (tag.id.split('-')[0]) {
-                    case 'genres':
-                        body.genres.push(parseInt(tag.id.split('-')[1] ?? '0'));
-                        break;
-                    case 'tags':
-                        body.tags.push(parseInt(tag.id.split('-')[1] ?? '0'));
-                        break;
-                    default:
-                }
-            });
-            const tagRequst = createRequestObject({
-                url: `${kavitaAPIUrl}/Series/all`,
-                data: JSON.stringify(body),
-                method: 'POST'
-            });
-            const tagResponse = await this.requestManager.schedule(tagRequst, 1);
-            const tagResult = JSON.parse(tagResponse.data);
-            for (const manga of tagResult) {
-                if (ids.includes(manga.id)) {
-                    tiles.push(createMangaTile({
-                        id: `${manga.id}`,
-                        title: createIconText({ text: manga.name }),
-                        image: `${kavitaAPIUrl}/image/series-cover?seriesId=${manga.id}`,
-                    }));
-                }
-            }
-        }
-        return createPagedResults({
-            results: tiles
-        });
+        return await (0, Search_1.searchRequest)(searchQuery, metadata, this.requestManager, this.interceptor, this.stateManager);
     }
     async getSearchTags() {
         // This function is also called when the user search in an other source. It should not throw if the server is unavailable.
@@ -658,23 +603,41 @@ class Kavya extends paperback_extensions_common_1.Source {
             return [];
         }
         const kavitaAPIUrl = await (0, Common_1.getKavitaAPIUrl)(this.stateManager);
-        const tags = ['genres', 'tags'];
+        const tags = ['genres', 'people', 'tags'];
+        // rome-ignore lint/suspicious/noExplicitAny: <explanation>
         const tagSections = [];
+        const promises = [];
         for (const [i, tag] of tags.entries()) {
             const request = createRequestObject({
                 url: `${kavitaAPIUrl}/Metadata/${tag}`,
                 method: 'GET',
             });
-            const response = await this.requestManager.schedule(request, 1);
-            const result = typeof response.data === 'string' ? JSON.parse(response.data) : response.data;
-            tagSections.push(createTagSection({
-                id: `${i}`,
-                label: tag,
+            promises.push(this.requestManager.schedule(request, 1).then((response) => {
+                const result = JSON.parse(response.data);
+                const names = [];
+                let tags = [];
                 // rome-ignore lint/suspicious/noExplicitAny: <explanation>
-                tags: result.map((item) => createTag({ id: `${tag}-${item.id}`, label: item.title }))
+                result.forEach((item) => {
+                    switch (tag) {
+                        case 'people':
+                            if (!names.includes(item.name)) {
+                                names.push(item.name);
+                                tags.push(createTag({ id: `${tag}-${item.id}`, label: item.name }));
+                            }
+                            break;
+                        default:
+                            tags.push(createTag({ id: `${tag}-${item.id}`, label: item.title }));
+                    }
+                });
+                tagSections[tag] = createTagSection({
+                    id: `${i}`,
+                    label: tag,
+                    tags: tags
+                });
             }));
         }
-        return tagSections;
+        await Promise.all(promises);
+        return tags.map((tag) => tagSections[tag]);
     }
     async getHomePageSections(sectionCallback) {
         // This function is called on the homepage and should not throw if the server is unavailable
@@ -720,7 +683,7 @@ class Kavya extends paperback_extensions_common_1.Source {
             method: 'GET',
         });
         const response = await this.requestManager.schedule(request, 1);
-        const result = typeof response.data === 'string' ? JSON.parse(response.data) : response.data;
+        const result = JSON.parse(response.data);
         for (const library of result) {
             sections.push(createHomeSection({
                 id: `${library.id}`,
@@ -730,6 +693,7 @@ class Kavya extends paperback_extensions_common_1.Source {
         }
         const promises = [];
         for (const section of sections) {
+            sectionCallback(section);
             // rome-ignore lint/suspicious/noExplicitAny: <explanation>
             // rome-ignore lint/style/useSingleVarDeclarator: <explanation>
             let apiPath, body = {}, id = 'id', title = 'name';
@@ -756,7 +720,7 @@ class Kavya extends paperback_extensions_common_1.Source {
             });
             // Get the section data
             promises.push(this.requestManager.schedule(request, 1).then((response) => {
-                let result = typeof response.data === 'string' ? JSON.parse(response.data) : response.data;
+                let result = JSON.parse(response.data);
                 const tiles = [];
                 for (const series of result) {
                     tiles.push(createMangaTile({
@@ -765,18 +729,12 @@ class Kavya extends paperback_extensions_common_1.Source {
                         image: `${kavitaAPIUrl}/image/series-cover?seriesId=${series[id]}`
                     }));
                 }
-                if (tiles.length > 0) {
-                    section.items = tiles;
-                }
+                section.items = tiles;
+                sectionCallback(section);
             }));
         }
         // Make sure the function completes
         await Promise.all(promises);
-        for (const section of sections) {
-            if (typeof section.items !== 'undefined' && section.items.length > 0) {
-                sectionCallback(section);
-            }
-        }
     }
     async getViewMoreItems(homepageSectionId, 
     // rome-ignore lint/suspicious/noExplicitAny: <explanation>
@@ -807,7 +765,7 @@ class Kavya extends paperback_extensions_common_1.Source {
             method: 'POST',
         });
         const response = await this.requestManager.schedule(request, 1);
-        const result = typeof response.data === 'string' ? JSON.parse(response.data) : response.data;
+        const result = JSON.parse(response.data);
         const tiles = [];
         for (const series of result) {
             tiles.push(createMangaTile({
@@ -823,7 +781,165 @@ class Kavya extends paperback_extensions_common_1.Source {
 }
 exports.Kavya = Kavya;
 
-},{"./Common":48,"./Settings":50,"paperback-extensions-common":4}],50:[function(require,module,exports){
+},{"./Common":48,"./Search":50,"./Settings":51,"paperback-extensions-common":4}],50:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.searchRequest = void 0;
+const Common_1 = require("./Common");
+// rome-ignore lint/suspicious/noExplicitAny: <explanation>
+const KAVITA_PERSON_ROLES = {
+    '3': 'writer',
+    '4': 'penciller',
+    '5': 'inker',
+    '6': 'colorist',
+    '7': 'letterer',
+    '8': 'coverArtist',
+    '9': 'editor',
+    '10': 'publisher',
+    '11': 'character',
+    '12': 'translators',
+};
+async function searchRequest(searchQuery, 
+// rome-ignore lint/suspicious/noExplicitAny: <explanation>
+metadata, requestManager, interceptor, stateManager) {
+    // This function is also called when the user search in an other source. It should not throw if the server is unavailable.
+    if (!(await interceptor.isServerAvailable())) {
+        (0, Common_1.log)('searchRequest failed because server settings are invalid');
+        return createPagedResults({
+            results: (0, Common_1.getServerUnavailableMangaTiles)(),
+        });
+    }
+    const kavitaAPIUrl = await (0, Common_1.getKavitaAPIUrl)(stateManager);
+    const enableRecursiveSearch = (await (0, Common_1.getOptions)(stateManager)).enableRecursiveSearch;
+    const titleSearchIds = [];
+    const tagSearchTiles = [];
+    const titleSearchTiles = [];
+    let peopleSearchTiles = [];
+    const queryString = (typeof searchQuery.title === 'undefined' || searchQuery.title === '') ? '""' : searchQuery.title;
+    const titleRequest = createRequestObject({
+        url: `${kavitaAPIUrl}/Search/search`,
+        param: `?queryString=${encodeURIComponent(queryString)}`,
+        method: 'GET'
+    });
+    // We don't want to throw if the server is unavailable
+    const titleResponse = await requestManager.schedule(titleRequest, 1);
+    const titleResult = JSON.parse(titleResponse.data);
+    for (const manga of titleResult.series) {
+        titleSearchIds.push(manga.seriesId);
+        titleSearchTiles.push(createMangaTile({
+            id: `${manga.seriesId}`,
+            title: createIconText({ text: manga.name }),
+            image: `${kavitaAPIUrl}/image/series-cover?seriesId=${manga.seriesId}`
+        }));
+    }
+    if (enableRecursiveSearch) {
+        const tags = ['persons', 'genres', 'tags'];
+        for (const tag of tags) {
+            for (const item of titleResult[tag]) {
+                let titleTagRequest;
+                switch (tag) {
+                    case 'persons':
+                        titleTagRequest = createRequestObject({
+                            url: `${kavitaAPIUrl}/Series/all`,
+                            data: JSON.stringify({ [KAVITA_PERSON_ROLES[item.role]]: [item.id] }),
+                            method: 'POST'
+                        });
+                        break;
+                    default:
+                        titleTagRequest = createRequestObject({
+                            url: `${kavitaAPIUrl}/Series/all`,
+                            data: JSON.stringify({ [tag]: [item.id] }),
+                            method: 'POST'
+                        });
+                }
+                const titleTagResponse = await requestManager.schedule(titleTagRequest, 1);
+                const titleTagResult = JSON.parse(titleTagResponse.data);
+                for (const manga of titleTagResult) {
+                    if (!titleSearchIds.includes(manga.id)) {
+                        titleSearchIds.push(manga.id);
+                        titleSearchTiles.push(createMangaTile({
+                            id: `${manga.id}`,
+                            title: createIconText({ text: manga.name }),
+                            image: `${kavitaAPIUrl}/image/series-cover?seriesId=${manga.id}`
+                        }));
+                    }
+                }
+            }
+        }
+    }
+    if (typeof searchQuery.includedTags !== 'undefined') {
+        // rome-ignore lint/suspicious/noExplicitAny: <explanation>
+        let body = {};
+        const peopleTags = [];
+        searchQuery.includedTags.forEach(async (tag) => {
+            switch (tag.id.split('-')[0]) {
+                case 'people':
+                    peopleTags.push(tag.label);
+                    break;
+                default:
+                    body = {
+                        ...body,
+                        [tag.id.split('-')[0] ?? '']: [parseInt(tag.id.split('-')[1] ?? '0')]
+                    };
+            }
+        });
+        const tagRequst = createRequestObject({
+            url: `${kavitaAPIUrl}/Series/all`,
+            data: JSON.stringify(body),
+            method: 'POST'
+        });
+        const tagResponse = await requestManager.schedule(tagRequst, 1);
+        const tagResult = JSON.parse(tagResponse.data);
+        for (const manga of tagResult) {
+            tagSearchTiles.push(createMangaTile({
+                id: `${manga.id}`,
+                title: createIconText({ text: manga.name }),
+                image: `${kavitaAPIUrl}/image/series-cover?seriesId=${manga.id}`,
+            }));
+        }
+        const peopleRequest = createRequestObject({
+            url: `${kavitaAPIUrl}/Metadata/people`,
+            method: 'GET'
+        });
+        const peopleResponse = await requestManager.schedule(peopleRequest, 1);
+        const peopleResult = JSON.parse(peopleResponse.data);
+        const promises = [];
+        for (const people of peopleResult) {
+            if (peopleTags.includes(people.name)) {
+                const request = createRequestObject({
+                    url: `${kavitaAPIUrl}/Series/all`,
+                    data: JSON.stringify({ [KAVITA_PERSON_ROLES[people.role]]: [people.id] }),
+                    method: 'POST'
+                });
+                promises.push((requestManager.schedule(request, 1).then((response) => {
+                    const result = JSON.parse(response.data);
+                    const tiles = [];
+                    for (const manga of result) {
+                        tiles.push(createMangaTile({
+                            id: `${manga.id}`,
+                            title: createIconText({ text: manga.name }),
+                            image: `${kavitaAPIUrl}/image/series-cover?seriesId=${manga.id}`
+                        }));
+                    }
+                    return tiles;
+                })));
+            }
+        }
+        peopleSearchTiles = (await Promise.all(promises)).flat();
+        // Remove duplicates
+        // as tile.id returns undefined (but, why ???), we use image instead
+        peopleSearchTiles = peopleSearchTiles.filter((value, index, self) => index === self.findIndex((target) => target.image === value.image));
+        // intersection of tagSearchTiles and peopleSearchTiles
+        peopleSearchTiles = peopleSearchTiles.length > 0 ? peopleSearchTiles.filter((value) => tagSearchTiles.some((target) => target.image === value.image)) : tagSearchTiles;
+    }
+    peopleSearchTiles = peopleSearchTiles.length > 0 ? peopleSearchTiles.filter((value) => titleSearchTiles.some((target) => target.image === value.image)) : titleSearchTiles;
+    return createPagedResults({
+        results: peopleSearchTiles
+    });
+}
+exports.searchRequest = searchRequest;
+
+},{"./Common":48}],51:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.serverSettingsMenu = void 0;
@@ -893,6 +1009,18 @@ const serverSettingsMenu = (stateManager, interceptor) => {
                             id: 'showNewlyAdded',
                             label: 'Show Newly Added',
                             value: values.showNewlyAdded,
+                        })
+                    ]),
+                }),
+                createSection({
+                    id: "searchOptions",
+                    header: "Search Options",
+                    footer: "",
+                    rows: async () => (0, Common_1.retrieveStateData)(stateManager).then((values) => [
+                        createSwitch({
+                            id: 'enableRecursiveSearch',
+                            label: 'Enable Recursive Search',
+                            value: values.enableRecursiveSearch,
                         })
                     ]),
                 }),
