@@ -466,7 +466,7 @@ const KAVITA_PUBLICATION_STATUS = [
     paperback_extensions_common_1.MangaStatus.COMPLETED
 ];
 exports.KavyaInfo = {
-    version: '1.1.1',
+    version: '1.1.2',
     name: 'Kavya',
     icon: 'icon.png',
     author: 'ACK72',
