@@ -459,7 +459,7 @@ const Settings_1 = require("./Settings");
 const Common_1 = require("./Common");
 const Search_1 = require("./Search");
 exports.KavyaInfo = {
-    version: '1.1.0',
+    version: '1.1.1',
     name: 'Kavya',
     icon: 'icon.png',
     author: 'ACK72',
@@ -556,16 +556,16 @@ class Kavya extends paperback_extensions_common_1.Source {
         const response = await this.requestManager.schedule(request, 1);
         const result = typeof response.data === 'string' ? JSON.parse(response.data) : response.data;
         const chapters = [];
-        for (const volume of result) {
+        for (const [i, volume] of result.entries()) {
             for (const chapter of volume.chapters) {
                 chapters.push(createChapter({
                     id: `${chapter.id}`,
                     mangaId: mangaId,
-                    chapNum: volume.number,
-                    name: volume.name,
+                    chapNum: chapter.number === '0' ? i + 1 : parseFloat(chapter.number),
+                    name: chapter.files[0].filePath.split('/').pop().slice(0, -4),
                     //volume: chapter.volumeId,
                     // @ts-ignore
-                    sortingIndex: volume.number,
+                    sortingIndex: parseFloat(`${i}.${chapter.number}`)
                 }));
             }
         }
