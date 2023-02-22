@@ -458,6 +458,13 @@ const paperback_extensions_common_1 = require("paperback-extensions-common");
 const Settings_1 = require("./Settings");
 const Common_1 = require("./Common");
 const Search_1 = require("./Search");
+const KAVITA_PUBLICATION_STATUS = [
+    paperback_extensions_common_1.MangaStatus.ONGOING,
+    paperback_extensions_common_1.MangaStatus.HIATUS,
+    paperback_extensions_common_1.MangaStatus.COMPLETED,
+    paperback_extensions_common_1.MangaStatus.ABANDONED,
+    paperback_extensions_common_1.MangaStatus.COMPLETED
+];
 exports.KavyaInfo = {
     version: '1.1.1',
     name: 'Kavya',
@@ -508,7 +515,7 @@ class Kavya extends paperback_extensions_common_1.Source {
         this.requestManager = createRequestManager({
             requestsPerSecond: 4,
             requestTimeout: 20000,
-            interceptor: this.interceptor,
+            interceptor: this.interceptor
         });
     }
     async getSourceMenu() {
@@ -531,17 +538,21 @@ class Kavya extends paperback_extensions_common_1.Source {
             param: `?seriesId=${mangaId}`,
             method: 'GET',
         });
-        const seriesResponse = await this.requestManager.schedule(seriesRequest, 1);
-        const seriesResult = typeof seriesResponse.data === 'string' ? JSON.parse(seriesResponse.data) : seriesResponse.data;
-        const metadataResponse = await this.requestManager.schedule(metadataRequest, 1);
-        const metadataResult = typeof metadataResponse.data === 'string' ? JSON.parse(metadataResponse.data) : metadataResponse.data;
+        const promises = [];
+        promises.push(this.requestManager.schedule(seriesRequest, 1));
+        promises.push(this.requestManager.schedule(metadataRequest, 1));
+        const responses = await Promise.all(promises);
+        const seriesResult = typeof responses[0]?.data === 'string' ? JSON.parse(responses[0]?.data) : responses[0]?.data;
+        const metadataResult = typeof responses[1]?.data === 'string' ? JSON.parse(responses[1]?.data) : responses[1]?.data;
+        (0, Common_1.log)(`${mangaId}: ${seriesResult.name}: ${metadataResult.pencillers[0]?.name}: ${metadataResult.writers[0]?.name}`);
         return createManga({
             id: mangaId,
             titles: [seriesResult.name],
             image: `${kavitaAPIUrl}/image/series-cover?seriesId=${mangaId}`,
             rating: seriesResult.userRating,
-            status: paperback_extensions_common_1.MangaStatus.UNKNOWN,
-            covers: [`${kavitaAPIUrl}/image/series-cover?seriesId=${mangaId}`],
+            status: KAVITA_PUBLICATION_STATUS[metadataResult.publicationStatus] ?? paperback_extensions_common_1.MangaStatus.UNKNOWN,
+            artist: typeof metadataResult.pencillers[0] === 'undefined' ? '' : metadataResult.pencillers[0].name,
+            author: typeof metadataResult.writers[0] === 'undefined' ? '' : metadataResult.writers[0].name,
             desc: metadataResult.summary.replace(/<[^>]+>/g, ''),
             lastUpdate: new Date(seriesResult.lastChapterAdded)
         });
@@ -563,6 +574,7 @@ class Kavya extends paperback_extensions_common_1.Source {
                     mangaId: mangaId,
                     chapNum: chapter.number === '0' ? i + 1 : parseFloat(chapter.number),
                     name: chapter.files[0].filePath.split('/').pop().slice(0, -4),
+                    time: new Date(chapter.releaseDate === '0001-01-01T00:00:00' ? chapter.lastModified : chapter.releaseDate),
                     //volume: chapter.volumeId,
                     // @ts-ignore
                     sortingIndex: parseFloat(`${i}.${chapter.number}`)
@@ -622,7 +634,7 @@ class Kavya extends paperback_extensions_common_1.Source {
                         case 'people':
                             if (!names.includes(item.name)) {
                                 names.push(item.name);
-                                tags.push(createTag({ id: `${tag}-${item.id}`, label: item.name }));
+                                tags.push(createTag({ id: `${tag}-${item.role}.${item.id}`, label: item.name }));
                             }
                             break;
                         default:
@@ -788,6 +800,8 @@ exports.searchRequest = void 0;
 const Common_1 = require("./Common");
 // rome-ignore lint/suspicious/noExplicitAny: <explanation>
 const KAVITA_PERSON_ROLES = {
+    '1': 'other',
+    '2': 'artist',
     '3': 'writer',
     '4': 'penciller',
     '5': 'inker',
