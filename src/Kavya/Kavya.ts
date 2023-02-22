@@ -31,6 +31,14 @@ import {
 } from './Common';
 import { searchRequest } from './Search';
 
+const KAVITA_PUBLICATION_STATUS: MangaStatus[] = [
+	MangaStatus.ONGOING,
+	MangaStatus.HIATUS,
+	MangaStatus.COMPLETED,
+	MangaStatus.ABANDONED,
+	MangaStatus.COMPLETED
+];
+
 export const KavyaInfo: SourceInfo = {
 	version: '1.1.1',
 	name: 'Kavya',
@@ -90,7 +98,7 @@ export class Kavya extends Source {
 	requestManager = createRequestManager({
 		requestsPerSecond: 4,
 		requestTimeout: 20000,
-		interceptor: this.interceptor,
+		interceptor: this.interceptor
 	});
 
 	override async getSourceMenu(): Promise<Section> {
@@ -116,19 +124,26 @@ export class Kavya extends Source {
 			method: 'GET',
 		});
 
-		const seriesResponse = await this.requestManager.schedule(seriesRequest, 1);
-		const seriesResult = typeof seriesResponse.data === 'string' ? JSON.parse(seriesResponse.data) : seriesResponse.data;
+		const promises: Promise<Response>[] = [];
 
-		const metadataResponse = await this.requestManager.schedule(metadataRequest, 1);
-		const metadataResult = typeof metadataResponse.data === 'string' ? JSON.parse(metadataResponse.data) : metadataResponse.data;
+		promises.push(this.requestManager.schedule(seriesRequest, 1));
+		promises.push(this.requestManager.schedule(metadataRequest, 1));
+
+		const responses: Response[] = await Promise.all(promises);
+
+		const seriesResult = typeof responses[0]?.data === 'string' ? JSON.parse(responses[0]?.data) : responses[0]?.data;
+		const metadataResult = typeof responses[1]?.data === 'string' ? JSON.parse(responses[1]?.data) : responses[1]?.data;
+
+		log(`${mangaId}: ${seriesResult.name}: ${metadataResult.pencillers[0]?.name}: ${metadataResult.writers[0]?.name}`);
 
 		return createManga({
 			id: mangaId,
 			titles: [seriesResult.name],
 			image: `${kavitaAPIUrl}/image/series-cover?seriesId=${mangaId}`,
 			rating: seriesResult.userRating,
-			status: MangaStatus.UNKNOWN,
-			covers: [`${kavitaAPIUrl}/image/series-cover?seriesId=${mangaId}`],
+			status: KAVITA_PUBLICATION_STATUS[metadataResult.publicationStatus] ?? MangaStatus.UNKNOWN,
+			artist: typeof metadataResult.pencillers[0] === 'undefined' ? '' : metadataResult.pencillers[0].name,
+			author: typeof metadataResult.writers[0] === 'undefined' ? '' : metadataResult.writers[0].name,
 			desc: metadataResult.summary.replace(/<[^>]+>/g, ''),
 			lastUpdate: new Date(seriesResult.lastChapterAdded)
 		});
@@ -156,6 +171,7 @@ export class Kavya extends Source {
 						mangaId: mangaId,
 						chapNum: chapter.number === '0' ? i+1 : parseFloat(chapter.number),
 						name: chapter.files[0].filePath.split('/').pop().slice(0, -4),
+						time: new Date(chapter.releaseDate === '0001-01-01T00:00:00' ? chapter.lastModified : chapter.releaseDate),
 						//volume: chapter.volumeId,
 						// @ts-ignore
 						sortingIndex: parseFloat(`${i}.${chapter.number}`)
@@ -214,7 +230,7 @@ export class Kavya extends Source {
 		
 		const tags: string[] = ['genres', 'people', 'tags'];
 		// rome-ignore lint/suspicious/noExplicitAny: <explanation>
-		const  tagSections: any = [];
+		const tagSections: any = [];
 
 		const promises: Promise<void>[] = [];
 
@@ -237,7 +253,7 @@ export class Kavya extends Source {
 							case 'people':
 								if (!names.includes(item.name)) {
 									names.push(item.name);
-									tags.push(createTag({id: `${tag}-${item.id}`, label: item.name}))
+									tags.push(createTag({id: `${tag}-${item.role}.${item.id}`, label: item.name}))
 								}
 								break;
 							default:

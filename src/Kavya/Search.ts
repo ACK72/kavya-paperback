@@ -17,6 +17,8 @@ import {
 
 // rome-ignore lint/suspicious/noExplicitAny: <explanation>
 const KAVITA_PERSON_ROLES: any = {
+	'1': 'other',
+	'2': 'artist',
 	'3': 'writer',
 	'4': 'penciller',
 	'5': 'inker',
