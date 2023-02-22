@@ -15,6 +15,7 @@ import {
 	Source,
 	SourceInfo,
 	SourceStateManager,
+	Tag,
 	TagSection,
 	TagType
 } from 'paperback-extensions-common';
@@ -28,6 +29,7 @@ import {
 	getServerUnavailableMangaTiles,
 	log
 } from './Common';
+import { searchRequest } from './Search';
 
 export const KavyaInfo: SourceInfo = {
 	version: '1.0.0',
@@ -57,7 +59,7 @@ export class KavitaRequestInterceptor implements RequestInterceptor {
 
 	async isServerAvailable(): Promise<boolean> {
 		if (this.authorization === '') {
-			this.updateAuthorization();
+			await this.updateAuthorization();
 		}
 
 		return this.authorization.startsWith('Bearer ');
@@ -127,8 +129,8 @@ export class Kavya extends Source {
 			rating: seriesResult.userRating,
 			status: MangaStatus.UNKNOWN,
 			covers: [`${kavitaAPIUrl}/image/series-cover?seriesId=${mangaId}`],
-			desc: metadataResult.summary,
-			lastUpdate: seriesResult.lastChapterAdded
+			desc: metadataResult.summary.replace(/<[^>]+>/g, ''),
+			lastUpdate: new Date(seriesResult.lastChapterAdded)
 		});
 	}
 
@@ -198,83 +200,7 @@ export class Kavya extends Source {
 		// rome-ignore lint/suspicious/noExplicitAny: <explanation>
 		metadata: any
 	): Promise<PagedResults> {
-		// This function is also called when the user search in an other source. It should not throw if the server is unavailable.
-		if (!(await this.interceptor.isServerAvailable())) {
-			log('searchRequest failed because server settings are invalid');
-
-			return createPagedResults({
-				results: getServerUnavailableMangaTiles(),
-			});
-		}
-		
-		const kavitaAPIUrl = await getKavitaAPIUrl(this.stateManager);
-
-		const ids: string[] = [];
-		let tiles: MangaTile[] = [];
-
-		const titleRequest = createRequestObject({
-			url: `${kavitaAPIUrl}/Search/search`,
-			param: `?queryString=${encodeURIComponent(searchQuery.title ?? '""')}`,
-			method: 'GET'
-		});
-
-		// We don't want to throw if the server is unavailable
-		const titleResponse = await this.requestManager.schedule(titleRequest, 1);
-		const titleResult = JSON.parse(titleResponse.data);
-
-		for (const manga of titleResult.series) {
-			ids.push(manga.seriesId);
-			tiles.push(
-				createMangaTile({
-					id: `${manga.seriesId}`,
-					title: createIconText({text: manga.name}),
-					image: `${kavitaAPIUrl}/image/series-cover?seriesId=${manga.seriesId}`
-				})
-			);
-		}
-
-		if (typeof searchQuery.includedTags !== 'undefined') {
-			tiles = [];
-
-			// rome-ignore lint/suspicious/noExplicitAny: <explanation>
-			let body: any = {genres: [], tags: []};
-			searchQuery.includedTags.forEach(async (tag) => {
-				switch (tag.id.split('-')[0]) {
-					case 'genres':
-						body.genres.push(parseInt(tag.id.split('-')[1] ?? '0'));
-						break;
-					case 'tags':
-						body.tags.push(parseInt(tag.id.split('-')[1] ?? '0'));
-						break;
-					default:
-				}
-			});
-
-			const tagRequst = createRequestObject({
-				url: `${kavitaAPIUrl}/Series/all`,
-				data: JSON.stringify(body),
-				method: 'POST'
-			});
-
-			const tagResponse = await this.requestManager.schedule(tagRequst, 1);
-			const tagResult = JSON.parse(tagResponse.data);
-
-			for (const manga of tagResult) {
-				if (ids.includes(manga.id)) {
-					tiles.push(
-						createMangaTile({
-							id: `${manga.id}`,
-							title: createIconText({text: manga.name}),
-							image: `${kavitaAPIUrl}/image/series-cover?seriesId=${manga.id}`,
-						})
-					);
-				}
-			}
-		}
-
-		return createPagedResults({
-			results: tiles
-		});
+		return await searchRequest(searchQuery, metadata, this.requestManager, this.interceptor, this.stateManager);
 	}
 
 	override async getSearchTags(): Promise<TagSection[]> {
@@ -286,8 +212,11 @@ export class Kavya extends Source {
 
 		const kavitaAPIUrl = await getKavitaAPIUrl(this.stateManager);
 		
-		const tags: string[] = ['genres', 'tags'];
-		const tagSections: TagSection[] = [];
+		const tags: string[] = ['genres', 'people', 'tags'];
+		// rome-ignore lint/suspicious/noExplicitAny: <explanation>
+		const  tagSections: any = [];
+
+		const promises: Promise<void>[] = [];
 
 		for (const [i, tag] of tags.entries()) {
 			const request = createRequestObject({
@@ -295,18 +224,38 @@ export class Kavya extends Source {
 				method: 'GET',
 			});
 
-			const response = await this.requestManager.schedule(request, 1);
-			const result = typeof response.data === 'string' ? JSON.parse(response.data) : response.data;
+			promises.push(
+				this.requestManager.schedule(request, 1).then((response) => {
+					const result = JSON.parse(response.data);
 
-			tagSections.push(createTagSection({
-				id: `${i}`,
-				label: tag,
-				// rome-ignore lint/suspicious/noExplicitAny: <explanation>
-				tags: result.map((item: any) => createTag({id: `${tag}-${item.id}`, label: item.title}))
-			}));
+					const names: string[] = [];
+					let tags: Tag[] = [];
+
+					// rome-ignore lint/suspicious/noExplicitAny: <explanation>
+					result.forEach((item: any) => {
+						switch (tag) {
+							case 'people':
+								if (!names.includes(item.name)) {
+									names.push(item.name);
+									tags.push(createTag({id: `${tag}-${item.id}`, label: item.name}))
+								}
+								break;
+							default:
+								tags.push(createTag({id: `${tag}-${item.id}`, label: item.title}))
+						}
+					});
+
+					tagSections[tag] = createTagSection({
+						id: `${i}`,
+						label: tag,
+						tags: tags
+					});
+				})
+			);
 		}
-		
-		return tagSections;
+
+		await Promise.all(promises);
+		return tags.map((tag) => tagSections[tag]);
 	}
 
 	override async getHomePageSections(
@@ -364,7 +313,7 @@ export class Kavya extends Source {
 		});
 
 		const response = await this.requestManager.schedule(request, 1);
-		const result = typeof response.data === 'string' ? JSON.parse(response.data) : response.data;
+		const result = JSON.parse(response.data);
 		
 		for (const library of result) {
 			sections.push(createHomeSection({
@@ -377,6 +326,8 @@ export class Kavya extends Source {
 		const promises: Promise<void>[] = [];
 
 		for (const section of sections) {
+			sectionCallback(section);
+
 			// rome-ignore lint/suspicious/noExplicitAny: <explanation>
 			// rome-ignore lint/style/useSingleVarDeclarator: <explanation>
 			let apiPath: string, body: any = {}, id: string = 'id', title: string = 'name';
@@ -406,7 +357,7 @@ export class Kavya extends Source {
 			// Get the section data
 			promises.push(
 				this.requestManager.schedule(request, 1).then((response) => {
-					let result = typeof response.data === 'string' ? JSON.parse(response.data) : response.data;
+					let result = JSON.parse(response.data);
 
 					const tiles: MangaTile[] = [];
 					
@@ -420,20 +371,14 @@ export class Kavya extends Source {
 						);
 					}
 					
-					if (tiles.length > 0) {
-						section.items = tiles;
-					}
+					section.items = tiles;
+					sectionCallback(section);
 				})
 			);
 		}
 
 		// Make sure the function completes
 		await Promise.all(promises);
-		for (const section of sections) {
-			if (typeof section.items !== 'undefined' && section.items.length > 0) {
-				sectionCallback(section);
-			}
-		}
 	}
 
 	override async getViewMoreItems(
@@ -470,7 +415,7 @@ export class Kavya extends Source {
 		});
 
 		const response = await this.requestManager.schedule(request, 1);
-		const result = typeof response.data === 'string' ? JSON.parse(response.data) : response.data;
+		const result = JSON.parse(response.data);
 
 		const tiles: MangaTile[] = [];
 		

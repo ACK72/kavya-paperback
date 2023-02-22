@@ -79,6 +79,18 @@ export const serverSettingsMenu = (
 						})
 					]),
 				}),
+				createSection({
+					id: "searchOptions",
+					header: "Search Options",
+					footer: "",
+					rows: async () => retrieveStateData(stateManager).then((values) => [
+						createSwitch({
+							id: 'enableRecursiveSearch',
+							label: 'Enable Recursive Search',
+							value: values.enableRecursiveSearch,
+						})
+					]),
+				}),
 			],
 		}),
 	});

@@ -30,6 +30,8 @@ const DEFAULT_SHOW_ON_DECK = true
 const DEFAULT_SHOW_RECENTLY_UPDATED = true
 const DEFAULT_SHOW_NEWLY_ADDED = true
 
+const DEFAULT_ENABLE_RECURSIVE_SEARCH = false
+
 export async function getKavitaAPIUrl(stateManager: SourceStateManager): Promise<string> {
 	return (await stateManager.retrieve('kavitaAPIUrl') as string | undefined) ?? DEFAULT_KAVITA_SERVER_API_URL
 }
@@ -53,12 +55,14 @@ export async function getAuthorizationString(stateManager: SourceStateManager): 
 	return token ? `Bearer ${token}` : '';
 }
 
-export async function getOptions(stateManager: SourceStateManager): Promise<{ showOnDeck: boolean; showRecentlyUpdated: boolean; showNewlyAdded: boolean }> {
+export async function getOptions(stateManager: SourceStateManager): Promise<{ showOnDeck: boolean; showRecentlyUpdated: boolean; showNewlyAdded: boolean; enableRecursiveSearch: boolean }> {
 	const showOnDeck = (await stateManager.retrieve('showOnDeck') as boolean) ?? DEFAULT_SHOW_ON_DECK
 	const showRecentlyUpdated = (await stateManager.retrieve('showRecentlyUpdated') as boolean) ?? DEFAULT_SHOW_RECENTLY_UPDATED
 	const showNewlyAdded = (await stateManager.retrieve('showNewlyAdded') as boolean) ?? DEFAULT_SHOW_NEWLY_ADDED
 
-	return { showOnDeck, showRecentlyUpdated, showNewlyAdded }
+	const enableRecursiveSearch = (await stateManager.retrieve('enableRecursiveSearch') as boolean) ?? DEFAULT_ENABLE_RECURSIVE_SEARCH
+
+	return { showOnDeck, showRecentlyUpdated, showNewlyAdded, enableRecursiveSearch }
 }
 
 export async function retrieveStateData(stateManager: SourceStateManager) {
@@ -69,7 +73,9 @@ export async function retrieveStateData(stateManager: SourceStateManager) {
 	const showRecentlyUpdated = (await stateManager.retrieve('showRecentlyUpdated') as boolean) ?? DEFAULT_SHOW_RECENTLY_UPDATED
 	const showNewlyAdded = (await stateManager.retrieve('showNewlyAdded') as boolean) ?? DEFAULT_SHOW_NEWLY_ADDED
 
-	return { kavitaURL, kavitaAPIKey, showOnDeck, showRecentlyUpdated, showNewlyAdded }
+	const enableRecursiveSearch = (await stateManager.retrieve('enableRecursiveSearch') as boolean) ?? DEFAULT_ENABLE_RECURSIVE_SEARCH
+
+	return { kavitaURL, kavitaAPIKey, showOnDeck, showRecentlyUpdated, showNewlyAdded, enableRecursiveSearch }
 }
 
 // rome-ignore lint/suspicious/noExplicitAny: <explanation>
@@ -85,6 +91,7 @@ export async function setStateData(stateManager: SourceStateManager, interceptor
 		data['showOnDeck'] ?? DEFAULT_SHOW_ON_DECK,
 		data['showRecentlyUpdated'] ?? DEFAULT_SHOW_RECENTLY_UPDATED,
 		data['showNewlyAdded'] ?? DEFAULT_SHOW_NEWLY_ADDED,
+		data['enableRecursiveSearch'] ?? DEFAULT_ENABLE_RECURSIVE_SEARCH
 	)
 }
 
@@ -94,8 +101,9 @@ async function setKavitaServer(stateManager: SourceStateManager, apiUri: string,
 	await stateManager.keychain.store('kavitaAPIKey', apiKey)
 }
 
-async function setOptions(stateManager: SourceStateManager, showOnDeck: boolean, showRecentlyUpdated: boolean, showNewlyAdded: boolean) {
+async function setOptions(stateManager: SourceStateManager, showOnDeck: boolean, showRecentlyUpdated: boolean, showNewlyAdded: boolean, enableRecursiveSearch: boolean) {
 	await stateManager.store('showOnDeck', showOnDeck)
 	await stateManager.store('showRecentlyUpdated', showRecentlyUpdated)
 	await stateManager.store('showNewlyAdded', showNewlyAdded)
+	await stateManager.store('enableRecursiveSearch', enableRecursiveSearch)
 }
