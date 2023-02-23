@@ -6,14 +6,12 @@ import {
 	SourceStateManager
 } from "paperback-extensions-common";
 import {
+	KavitaRequestInterceptor,
 	getKavitaAPIUrl,
 	getOptions,
 	getServerUnavailableMangaTiles,
 	log
 } from "./Common";
-import {
-	KavitaRequestInterceptor
-} from "./Kavya";
 
 // rome-ignore lint/suspicious/noExplicitAny: <explanation>
 const KAVITA_PERSON_ROLES: any = {

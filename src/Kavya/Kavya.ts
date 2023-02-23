@@ -4,17 +4,12 @@ import {
 	ContentRating,
 	HomeSection,
 	Manga,
-	MangaStatus,
 	MangaTile,
 	PagedResults,
-	Request,
-	RequestInterceptor,
-	Response,
 	SearchRequest,
 	Section,
 	Source,
 	SourceInfo,
-	SourceStateManager,
 	Tag,
 	TagSection,
 	TagType
@@ -23,21 +18,14 @@ import {
 	serverSettingsMenu
 } from './Settings';
 import {
-	getAuthorizationString,
+	KavitaRequestInterceptor,
 	getKavitaAPIUrl,
 	getOptions,
 	getServerUnavailableMangaTiles,
-	log
+	log,
+	getSeriesDetails
 } from './Common';
 import { searchRequest } from './Search';
-
-const KAVITA_PUBLICATION_STATUS: MangaStatus[] = [
-	MangaStatus.ONGOING,
-	MangaStatus.HIATUS,
-	MangaStatus.COMPLETED,
-	MangaStatus.ABANDONED,
-	MangaStatus.COMPLETED
-];
 
 export const KavyaInfo: SourceInfo = {
 	version: '1.1.3',
@@ -55,41 +43,6 @@ export const KavyaInfo: SourceInfo = {
 		},
 	],
 };
-
-export class KavitaRequestInterceptor implements RequestInterceptor {
-	stateManager: SourceStateManager;
-	authorization: string;
-
-	constructor(stateManager: SourceStateManager) {
-		this.stateManager = stateManager;
-		this.authorization = '';
-	}
-
-	async isServerAvailable(): Promise<boolean> {
-		if (this.authorization === '') {
-			await this.updateAuthorization();
-		}
-
-		return this.authorization.startsWith('Bearer ');
-	}
-
-	async updateAuthorization(): Promise<void> {
-		this.authorization = await getAuthorizationString(this.stateManager);
-	}
-
-	async interceptResponse(response: Response): Promise<Response> {
-		return response;
-	}
-
-	async interceptRequest(request: Request): Promise<Request> {		
-		request.headers = {
-			'Authorization': this.authorization,
-			'Content-Type': typeof request.data === 'string' ? 'application/json' : 'text/html'
-		}
-
-		return request;
-	}
-}
 
 export class Kavya extends Source {
 	stateManager = createSourceStateManager({});
@@ -112,63 +65,7 @@ export class Kavya extends Source {
 	}
 
 	async getMangaDetails(mangaId: string): Promise<Manga> {
-		const kavitaAPIUrl = await getKavitaAPIUrl(this.stateManager);
-
-		const seriesRequest = createRequestObject({
-			url: `${kavitaAPIUrl}/Series/${mangaId}`,
-			method: 'GET',
-		});
-		const metadataRequest = createRequestObject({
-			url: `${kavitaAPIUrl}/Series/metadata`,
-			param: `?seriesId=${mangaId}`,
-			method: 'GET',
-		});
-
-		const promises: Promise<Response>[] = [];
-
-		promises.push(this.requestManager.schedule(seriesRequest, 1));
-		promises.push(this.requestManager.schedule(metadataRequest, 1));
-
-		const responses: Response[] = await Promise.all(promises);
-
-		const seriesResult = typeof responses[0]?.data === 'string' ? JSON.parse(responses[0]?.data) : responses[0]?.data;
-		const metadataResult = typeof responses[1]?.data === 'string' ? JSON.parse(responses[1]?.data) : responses[1]?.data;
-
-		log(`${mangaId}: ${seriesResult.name}: ${metadataResult.pencillers[0]?.name}: ${metadataResult.writers[0]?.name}`);
-
-		// exclude people tags for now
-		const tagNames = ['genres', 'tags']
-		const tagSections: TagSection[] = [];
-
-		for (const tagName of tagNames) {
-			const tags: Tag[] = [];
-
-			for (const tag of metadataResult[tagName]) {
-				tags.push(createTag({
-					id: `${tagName}-${tag.id}`,
-					label: tag.title
-				}));
-			}
-
-			tagSections.push(createTagSection({
-				id: tagName,
-				label: tagName,
-				tags: tags
-			}));
-		}
-
-		return createManga({
-			id: mangaId,
-			titles: [seriesResult.name],
-			image: `${kavitaAPIUrl}/image/series-cover?seriesId=${mangaId}`,
-			rating: seriesResult.userRating,
-			status: KAVITA_PUBLICATION_STATUS[metadataResult.publicationStatus] ?? MangaStatus.UNKNOWN,
-			artist: typeof metadataResult.pencillers[0] === 'undefined' ? '' : metadataResult.pencillers[0].name,
-			author: typeof metadataResult.writers[0] === 'undefined' ? '' : metadataResult.writers[0].name,
-			desc: metadataResult.summary.replace(/<[^>]+>/g, ''),
-			tags: tagSections,
-			lastUpdate: new Date(seriesResult.lastChapterAdded)
-		});
+		return await getSeriesDetails(mangaId, this.requestManager, this.stateManager);
 	}
 
 	async getChapters(mangaId: string): Promise<Chapter[]> {

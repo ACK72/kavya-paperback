@@ -3,10 +3,9 @@ import {
 	SourceStateManager,
 } from "paperback-extensions-common";
 import {
-	retrieveStateData,
-	setStateData,
+	DEFAULT_VALUES,
+	KavitaRequestInterceptor
 } from "./Common";
-import { KavitaRequestInterceptor } from "./Kavya";
 
 /* UI definition */
 // NOTE: Submitted data won't be tested
@@ -107,3 +106,57 @@ export const serverSettingsMenu = (
 		}),
 	});
 };
+
+export async function retrieveStateData(stateManager: SourceStateManager) {
+	const kavitaURL = (await stateManager.retrieve('kavitaAddress') as string) ?? DEFAULT_VALUES.kavitaAddress;
+	const kavitaAPIKey = (await stateManager.keychain.retrieve('kavitaAPIKey') as string) ?? DEFAULT_VALUES.kavitaAPIKey;
+
+	const showOnDeck = (await stateManager.retrieve('showOnDeck') as boolean) ?? DEFAULT_VALUES.showOnDeck;
+	const showRecentlyUpdated = (await stateManager.retrieve('showRecentlyUpdated') as boolean) ?? DEFAULT_VALUES.showRecentlyUpdated;
+	const showNewlyAdded = (await stateManager.retrieve('showNewlyAdded') as boolean) ?? DEFAULT_VALUES.showNewlyAdded;
+
+	const enableRecursiveSearch = (await stateManager.retrieve('enableRecursiveSearch') as boolean) ?? DEFAULT_VALUES.enableRecursiveSearch;
+
+	const excludeBookTypeLibrary = (await stateManager.retrieve('excludeBookTypeLibrary') as boolean) ?? DEFAULT_VALUES.excludeBookTypeLibrary;
+
+	return { kavitaURL, kavitaAPIKey, showOnDeck, showRecentlyUpdated, showNewlyAdded, enableRecursiveSearch, excludeBookTypeLibrary }
+}
+
+// rome-ignore lint/suspicious/noExplicitAny: <explanation>
+export async function setStateData(stateManager: SourceStateManager, interceptor: KavitaRequestInterceptor, data: Record<string, any>) {
+	await setKavitaServer(
+		stateManager,
+		data['kavitaAddress'] ?? DEFAULT_VALUES.kavitaAddress,
+		data['kavitaAPIKey'] ?? DEFAULT_VALUES.kavitaAPIKey,
+	)
+	await interceptor.updateAuthorization();
+	await setOptions(
+		stateManager,
+		data['showOnDeck'] ?? DEFAULT_VALUES.showOnDeck,
+		data['showRecentlyUpdated'] ?? DEFAULT_VALUES.showRecentlyUpdated,
+		data['showNewlyAdded'] ?? DEFAULT_VALUES.showNewlyAdded,
+		data['enableRecursiveSearch'] ?? DEFAULT_VALUES.enableRecursiveSearch,
+		data['excludeBookTypeLibrary'] ?? DEFAULT_VALUES.excludeBookTypeLibrary
+	)
+}
+
+async function setKavitaServer(stateManager: SourceStateManager, apiUri: string, apiKey: string) {
+	await stateManager.store('kavitaAddress', apiUri)
+	await stateManager.store('kavitaAPIUrl', apiUri + (apiUri.slice(-1) === '/' ? 'api' : '/api'))
+	await stateManager.keychain.store('kavitaAPIKey', apiKey)
+}
+
+async function setOptions(
+	stateManager: SourceStateManager,
+	showOnDeck: boolean,
+	showRecentlyUpdated: boolean,
+	showNewlyAdded: boolean,
+	enableRecursiveSearch: boolean,
+	excludeBookTypeLibrary: boolean
+) {
+	await stateManager.store('showOnDeck', showOnDeck)
+	await stateManager.store('showRecentlyUpdated', showRecentlyUpdated)
+	await stateManager.store('showNewlyAdded', showNewlyAdded)
+	await stateManager.store('enableRecursiveSearch', enableRecursiveSearch)
+	await stateManager.store('excludeBookTypeLibrary', excludeBookTypeLibrary)
+}
