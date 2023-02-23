@@ -104,13 +104,13 @@ export async function searchRequest(
 	}
 
 	if (enableRecursiveSearch) {
-		const tags: string[] = ['persons', 'genres', 'tags'];
+		const tagNames: string[] = ['persons', 'genres', 'tags'];
 
-		for (const tag of tags) {
-			for (const item of titleResult[tag]) {
+		for (const tagName of tagNames) {
+			for (const item of titleResult[tagName]) {
 				let titleTagRequest: Request;
 
-				switch (tag) {
+				switch (tagName) {
 					case 'persons':
 						titleTagRequest = createRequestObject({
 							url: `${kavitaAPIUrl}/Series/all`,
@@ -121,7 +121,7 @@ export async function searchRequest(
 					default:
 						titleTagRequest = createRequestObject({
 							url: `${kavitaAPIUrl}/Series/all`,
-							data: JSON.stringify({[tag]: [item.id]}),
+							data: JSON.stringify({[tagName]: [item.id]}),
 							method: 'POST'
 						});
 				}

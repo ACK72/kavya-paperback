@@ -136,6 +136,27 @@ export class Kavya extends Source {
 
 		log(`${mangaId}: ${seriesResult.name}: ${metadataResult.pencillers[0]?.name}: ${metadataResult.writers[0]?.name}`);
 
+		// exclude people tags for now
+		const tagNames = ['genres', 'tags']
+		const tagSections: TagSection[] = [];
+
+		for (const tagName of tagNames) {
+			const tags: Tag[] = [];
+
+			for (const tag of metadataResult[tagName]) {
+				tags.push(createTag({
+					id: `${tagName}-${tag.id}`,
+					label: tag.title
+				}));
+			}
+
+			tagSections.push(createTagSection({
+				id: tagName,
+				label: tagName,
+				tags: tags
+			}));
+		}
+
 		return createManga({
 			id: mangaId,
 			titles: [seriesResult.name],
@@ -145,6 +166,7 @@ export class Kavya extends Source {
 			artist: typeof metadataResult.pencillers[0] === 'undefined' ? '' : metadataResult.pencillers[0].name,
 			author: typeof metadataResult.writers[0] === 'undefined' ? '' : metadataResult.writers[0].name,
 			desc: metadataResult.summary.replace(/<[^>]+>/g, ''),
+			tags: tagSections,
 			lastUpdate: new Date(seriesResult.lastChapterAdded)
 		});
 	}
@@ -165,18 +187,16 @@ export class Kavya extends Source {
 
 		for (const [i, volume] of result.entries()) {
 			for (const chapter of volume.chapters) {
-				chapters.push(
-					createChapter({
-						id: `${chapter.id}`,
-						mangaId: mangaId,
-						chapNum: chapter.number === '0' ? i+1 : parseFloat(chapter.number),
-						name: chapter.files[0].filePath.split('/').pop().slice(0, -4),
-						time: new Date(chapter.releaseDate === '0001-01-01T00:00:00' ? chapter.lastModified : chapter.releaseDate),
-						//volume: chapter.volumeId,
-						// @ts-ignore
-						sortingIndex: parseFloat(`${i}.${chapter.number}`)
-					})
-				);
+				chapters.push(createChapter({
+					id: `${chapter.id}`,
+					mangaId: mangaId,
+					chapNum: chapter.number === '0' ? i+1 : parseFloat(chapter.number),
+					name: chapter.files[0].filePath.endsWith('.epub') ? chapter.files[0].filePath.split('/').pop().slice(0, -5) : chapter.files[0].filePath.split('/').pop().slice(0, -4),
+					time: new Date(chapter.releaseDate === '0001-01-01T00:00:00' ? chapter.lastModified : chapter.releaseDate),
+					//volume: chapter.volumeId,
+					// @ts-ignore
+					sortingIndex: parseFloat(`${i}.${chapter.number}`)
+				}));
 			}
 		}
 
@@ -228,15 +248,15 @@ export class Kavya extends Source {
 
 		const kavitaAPIUrl = await getKavitaAPIUrl(this.stateManager);
 		
-		const tags: string[] = ['genres', 'people', 'tags'];
+		const tagNames: string[] = ['genres', 'people', 'tags'];
 		// rome-ignore lint/suspicious/noExplicitAny: <explanation>
 		const tagSections: any = [];
 
 		const promises: Promise<void>[] = [];
 
-		for (const [i, tag] of tags.entries()) {
+		for (const tagName of tagNames) {
 			const request = createRequestObject({
-				url: `${kavitaAPIUrl}/Metadata/${tag}`,
+				url: `${kavitaAPIUrl}/Metadata/${tagName}`,
 				method: 'GET',
 			});
 
@@ -245,25 +265,25 @@ export class Kavya extends Source {
 					const result = JSON.parse(response.data);
 
 					const names: string[] = [];
-					let tags: Tag[] = [];
+					const tags: Tag[] = [];
 
 					// rome-ignore lint/suspicious/noExplicitAny: <explanation>
 					result.forEach((item: any) => {
-						switch (tag) {
+						switch (tagName) {
 							case 'people':
 								if (!names.includes(item.name)) {
 									names.push(item.name);
-									tags.push(createTag({id: `${tag}-${item.role}.${item.id}`, label: item.name}))
+									tags.push(createTag({id: `${tagName}-${item.role}.${item.id}`, label: item.name}))
 								}
 								break;
 							default:
-								tags.push(createTag({id: `${tag}-${item.id}`, label: item.title}))
+								tags.push(createTag({id: `${tagName}-${item.id}`, label: item.title}))
 						}
 					});
 
-					tagSections[tag] = createTagSection({
-						id: `${i}`,
-						label: tag,
+					tagSections[tagName] = createTagSection({
+						id: tagName,
+						label: tagName,
 						tags: tags
 					});
 				})
@@ -271,7 +291,7 @@ export class Kavya extends Source {
 		}
 
 		await Promise.all(promises);
-		return tags.map((tag) => tagSections[tag]);
+		return tagNames.map((tag) => tagSections[tag]);
 	}
 
 	override async getHomePageSections(
@@ -389,13 +409,11 @@ export class Kavya extends Source {
 							continue;
 						}
 
-						tiles.push(
-							createMangaTile({
-								id: `${series[id]}`,
-								title: createIconText({text: series[title]}),
-								image: `${kavitaAPIUrl}/image/series-cover?seriesId=${series[id]}`
-							})
-						);
+						tiles.push(createMangaTile({
+							id: `${series[id]}`,
+							title: createIconText({text: series[title]}),
+							image: `${kavitaAPIUrl}/image/series-cover?seriesId=${series[id]}`
+						}));
 					}
 					
 					section.items = tiles;
@@ -447,13 +465,11 @@ export class Kavya extends Source {
 		const tiles: MangaTile[] = [];
 		
 		for (const series of result) {
-			tiles.push(
-				createMangaTile({
-					id: `${series[id]}`,
-					title: createIconText({text: series[title]}),
-					image: `${kavitaAPIUrl}/image/series-cover?seriesId=${series[id]}`
-				})
-			);
+			tiles.push(createMangaTile({
+				id: `${series[id]}`,
+				title: createIconText({text: series[title]}),
+				image: `${kavitaAPIUrl}/image/series-cover?seriesId=${series[id]}`
+			}));
 		}
 
 		return createPagedResults({
