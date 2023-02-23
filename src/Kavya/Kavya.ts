@@ -40,7 +40,7 @@ const KAVITA_PUBLICATION_STATUS: MangaStatus[] = [
 ];
 
 export const KavyaInfo: SourceInfo = {
-	version: '1.1.2',
+	version: '1.1.3',
 	name: 'Kavya',
 	icon: 'icon.png',
 	author: 'ACK72',
