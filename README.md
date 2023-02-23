@@ -1,4 +1,4 @@
-# Kavya ![Generic badge](https://img.shields.io/badge/version-1.1.2-green.svg)
+# Kavya ![Generic badge](https://img.shields.io/badge/version-1.1.3-green.svg)
 Kavya, A [Kavita](https://www.kavitareader.com/) client extension, for [Paperback](https://paperback.moe/)
 
 
