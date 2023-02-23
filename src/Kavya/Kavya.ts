@@ -3,7 +3,6 @@ import {
 	ChapterDetails,
 	ContentRating,
 	HomeSection,
-	LanguageCode,
 	Manga,
 	MangaTile,
 	PagedResults,
@@ -27,6 +26,11 @@ import {
 	getSeriesDetails
 } from './Common';
 import { searchRequest } from './Search';
+
+const sortHelper = (a: Chapter, b: Chapter) => {
+	if (a.volume === b.volume) return (a.chapNum > b.chapNum) ? -1 : 1;
+	else return ((a.volume ?? 0) > (b.volume ?? 0)) ? -1 : 1;
+}
 
 export const KavyaInfo: SourceInfo = {
 	version: '1.1.4',
@@ -82,10 +86,11 @@ export class Kavya extends Source {
 		const result = typeof response.data === 'string' ? JSON.parse(response.data) : response.data;
 
 		const chapters: Chapter[] = [];
+		const specials: Chapter[] = [];
 
 		for (const volume of result) {
 			for (const chapter of volume.chapters) {
-				chapters.push(createChapter({
+				const item = createChapter({
 					id: `${chapter.id}`,
 					mangaId: mangaId,
 					chapNum: parseInt(chapter.number),
@@ -94,16 +99,17 @@ export class Kavya extends Source {
 					volume: volume.number,
 					// @ts-ignore
 					sortingIndex: 0
-				}));
+				});
+
+				if (chapter.isSpecial) specials.push(item);
+				else chapters.push(item);
 			}
 		}
 
-		chapters.sort((a, b) => {
-			if (a.volume === b.volume) return (a.chapNum > b.chapNum) ? -1 : 1;
-			else return ((a.volume ?? 0) > (b.volume ?? 0)) ? -1 : 1;
-		});
+		specials.sort(sortHelper);
+		chapters.sort(sortHelper);
 
-		return chapters;
+		return chapters.concat(specials);
 	}
 
 	async getChapterDetails(
