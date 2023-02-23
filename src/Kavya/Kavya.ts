@@ -3,6 +3,7 @@ import {
 	ChapterDetails,
 	ContentRating,
 	HomeSection,
+	LanguageCode,
 	Manga,
 	MangaTile,
 	PagedResults,
@@ -82,20 +83,25 @@ export class Kavya extends Source {
 
 		const chapters: Chapter[] = [];
 
-		for (const [i, volume] of result.entries()) {
+		for (const volume of result) {
 			for (const chapter of volume.chapters) {
 				chapters.push(createChapter({
 					id: `${chapter.id}`,
 					mangaId: mangaId,
-					chapNum: chapter.number === '0' ? i+1 : parseFloat(chapter.number),
-					name: chapter.files[0].filePath.endsWith('.epub') ? chapter.files[0].filePath.split('/').pop().slice(0, -5) : chapter.files[0].filePath.split('/').pop().slice(0, -4),
+					chapNum: parseInt(chapter.number),
+					name: chapter.titleName,
 					time: new Date(chapter.releaseDate === '0001-01-01T00:00:00' ? chapter.lastModified : chapter.releaseDate),
-					//volume: chapter.volumeId,
+					volume: volume.number,
 					// @ts-ignore
-					sortingIndex: parseFloat(`${i}.${chapter.number}`)
+					sortingIndex: 0
 				}));
 			}
 		}
+
+		chapters.sort((a, b) => {
+			if (a.volume === b.volume) return (a.chapNum > b.chapNum) ? -1 : 1;
+			else return ((a.volume ?? 0) > (b.volume ?? 0)) ? -1 : 1;
+		});
 
 		return chapters;
 	}
