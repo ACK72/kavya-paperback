@@ -392,6 +392,7 @@ const DEFAULT_SHOW_ON_DECK = true;
 const DEFAULT_SHOW_RECENTLY_UPDATED = true;
 const DEFAULT_SHOW_NEWLY_ADDED = true;
 const DEFAULT_ENABLE_RECURSIVE_SEARCH = false;
+const DEFAULT_EXCLUDE_BOOK_TYPE_LIBRARY = false;
 async function getKavitaAPIUrl(stateManager) {
     return await stateManager.retrieve('kavitaAPIUrl') ?? DEFAULT_KAVITA_SERVER_API_URL;
 }
@@ -418,7 +419,8 @@ async function getOptions(stateManager) {
     const showRecentlyUpdated = await stateManager.retrieve('showRecentlyUpdated') ?? DEFAULT_SHOW_RECENTLY_UPDATED;
     const showNewlyAdded = await stateManager.retrieve('showNewlyAdded') ?? DEFAULT_SHOW_NEWLY_ADDED;
     const enableRecursiveSearch = await stateManager.retrieve('enableRecursiveSearch') ?? DEFAULT_ENABLE_RECURSIVE_SEARCH;
-    return { showOnDeck, showRecentlyUpdated, showNewlyAdded, enableRecursiveSearch };
+    const excludeBookTypeLibrary = await stateManager.retrieve('excludeBookTypeLibrary') ?? DEFAULT_EXCLUDE_BOOK_TYPE_LIBRARY;
+    return { showOnDeck, showRecentlyUpdated, showNewlyAdded, enableRecursiveSearch, excludeBookTypeLibrary };
 }
 exports.getOptions = getOptions;
 async function retrieveStateData(stateManager) {
@@ -428,14 +430,15 @@ async function retrieveStateData(stateManager) {
     const showRecentlyUpdated = await stateManager.retrieve('showRecentlyUpdated') ?? DEFAULT_SHOW_RECENTLY_UPDATED;
     const showNewlyAdded = await stateManager.retrieve('showNewlyAdded') ?? DEFAULT_SHOW_NEWLY_ADDED;
     const enableRecursiveSearch = await stateManager.retrieve('enableRecursiveSearch') ?? DEFAULT_ENABLE_RECURSIVE_SEARCH;
-    return { kavitaURL, kavitaAPIKey, showOnDeck, showRecentlyUpdated, showNewlyAdded, enableRecursiveSearch };
+    const excludeBookTypeLibrary = await stateManager.retrieve('excludeBookTypeLibrary') ?? DEFAULT_EXCLUDE_BOOK_TYPE_LIBRARY;
+    return { kavitaURL, kavitaAPIKey, showOnDeck, showRecentlyUpdated, showNewlyAdded, enableRecursiveSearch, excludeBookTypeLibrary };
 }
 exports.retrieveStateData = retrieveStateData;
 // rome-ignore lint/suspicious/noExplicitAny: <explanation>
 async function setStateData(stateManager, interceptor, data) {
     await setKavitaServer(stateManager, data['kavitaAddress'] ?? DEFAULT_KAVITA_SERVER_ADDRESS, data['kavitaAPIKey'] ?? DEFAULT_KAVITA_SERVER_API_KEY);
     await interceptor.updateAuthorization();
-    await setOptions(stateManager, data['showOnDeck'] ?? DEFAULT_SHOW_ON_DECK, data['showRecentlyUpdated'] ?? DEFAULT_SHOW_RECENTLY_UPDATED, data['showNewlyAdded'] ?? DEFAULT_SHOW_NEWLY_ADDED, data['enableRecursiveSearch'] ?? DEFAULT_ENABLE_RECURSIVE_SEARCH);
+    await setOptions(stateManager, data['showOnDeck'] ?? DEFAULT_SHOW_ON_DECK, data['showRecentlyUpdated'] ?? DEFAULT_SHOW_RECENTLY_UPDATED, data['showNewlyAdded'] ?? DEFAULT_SHOW_NEWLY_ADDED, data['enableRecursiveSearch'] ?? DEFAULT_ENABLE_RECURSIVE_SEARCH, data['excludeBookTypeLibrary'] ?? DEFAULT_EXCLUDE_BOOK_TYPE_LIBRARY);
 }
 exports.setStateData = setStateData;
 async function setKavitaServer(stateManager, apiUri, apiKey) {
@@ -443,11 +446,12 @@ async function setKavitaServer(stateManager, apiUri, apiKey) {
     await stateManager.store('kavitaAPIUrl', apiUri + (apiUri.slice(-1) === '/' ? 'api' : '/api'));
     await stateManager.keychain.store('kavitaAPIKey', apiKey);
 }
-async function setOptions(stateManager, showOnDeck, showRecentlyUpdated, showNewlyAdded, enableRecursiveSearch) {
+async function setOptions(stateManager, showOnDeck, showRecentlyUpdated, showNewlyAdded, enableRecursiveSearch, excludeBookTypeLibrary) {
     await stateManager.store('showOnDeck', showOnDeck);
     await stateManager.store('showRecentlyUpdated', showRecentlyUpdated);
     await stateManager.store('showNewlyAdded', showNewlyAdded);
     await stateManager.store('enableRecursiveSearch', enableRecursiveSearch);
+    await stateManager.store('excludeBookTypeLibrary', excludeBookTypeLibrary);
 }
 
 },{}],49:[function(require,module,exports){
@@ -466,7 +470,7 @@ const KAVITA_PUBLICATION_STATUS = [
     paperback_extensions_common_1.MangaStatus.COMPLETED
 ];
 exports.KavyaInfo = {
-    version: '1.1.2',
+    version: '1.1.3',
     name: 'Kavya',
     icon: 'icon.png',
     author: 'ACK72',
@@ -545,6 +549,23 @@ class Kavya extends paperback_extensions_common_1.Source {
         const seriesResult = typeof responses[0]?.data === 'string' ? JSON.parse(responses[0]?.data) : responses[0]?.data;
         const metadataResult = typeof responses[1]?.data === 'string' ? JSON.parse(responses[1]?.data) : responses[1]?.data;
         (0, Common_1.log)(`${mangaId}: ${seriesResult.name}: ${metadataResult.pencillers[0]?.name}: ${metadataResult.writers[0]?.name}`);
+        // exclude people tags for now
+        const tagNames = ['genres', 'tags'];
+        const tagSections = [];
+        for (const tagName of tagNames) {
+            const tags = [];
+            for (const tag of metadataResult[tagName]) {
+                tags.push(createTag({
+                    id: `${tagName}-${tag.id}`,
+                    label: tag.title
+                }));
+            }
+            tagSections.push(createTagSection({
+                id: tagName,
+                label: tagName,
+                tags: tags
+            }));
+        }
         return createManga({
             id: mangaId,
             titles: [seriesResult.name],
@@ -554,6 +575,7 @@ class Kavya extends paperback_extensions_common_1.Source {
             artist: typeof metadataResult.pencillers[0] === 'undefined' ? '' : metadataResult.pencillers[0].name,
             author: typeof metadataResult.writers[0] === 'undefined' ? '' : metadataResult.writers[0].name,
             desc: metadataResult.summary.replace(/<[^>]+>/g, ''),
+            tags: tagSections,
             lastUpdate: new Date(seriesResult.lastChapterAdded)
         });
     }
@@ -573,7 +595,7 @@ class Kavya extends paperback_extensions_common_1.Source {
                     id: `${chapter.id}`,
                     mangaId: mangaId,
                     chapNum: chapter.number === '0' ? i + 1 : parseFloat(chapter.number),
-                    name: chapter.files[0].filePath.split('/').pop().slice(0, -4),
+                    name: chapter.files[0].filePath.endsWith('.epub') ? chapter.files[0].filePath.split('/').pop().slice(0, -5) : chapter.files[0].filePath.split('/').pop().slice(0, -4),
                     time: new Date(chapter.releaseDate === '0001-01-01T00:00:00' ? chapter.lastModified : chapter.releaseDate),
                     //volume: chapter.volumeId,
                     // @ts-ignore
@@ -615,41 +637,55 @@ class Kavya extends paperback_extensions_common_1.Source {
             return [];
         }
         const kavitaAPIUrl = await (0, Common_1.getKavitaAPIUrl)(this.stateManager);
-        const tags = ['genres', 'people', 'tags'];
+        const { excludeBookTypeLibrary } = await (0, Common_1.getOptions)(this.stateManager);
+        const includeLibraryIds = [];
+        const libraryRequest = createRequestObject({
+            url: `${kavitaAPIUrl}/Library`,
+            method: 'GET',
+        });
+        const libraryResponse = await this.requestManager.schedule(libraryRequest, 1);
+        const libraryResult = JSON.parse(libraryResponse.data);
+        for (const library of libraryResult) {
+            if (excludeBookTypeLibrary && library.type === 2)
+                continue;
+            includeLibraryIds.push(library.id);
+        }
+        const tagNames = ['genres', 'people', 'tags'];
         // rome-ignore lint/suspicious/noExplicitAny: <explanation>
         const tagSections = [];
         const promises = [];
-        for (const [i, tag] of tags.entries()) {
+        for (const tagName of tagNames) {
             const request = createRequestObject({
-                url: `${kavitaAPIUrl}/Metadata/${tag}`,
+                url: `${kavitaAPIUrl}/Metadata/${tagName}`,
+                param: `?libraryIds=${includeLibraryIds.join(',')}`,
                 method: 'GET',
             });
             promises.push(this.requestManager.schedule(request, 1).then((response) => {
                 const result = JSON.parse(response.data);
                 const names = [];
-                let tags = [];
+                const tags = [];
                 // rome-ignore lint/suspicious/noExplicitAny: <explanation>
-                result.forEach((item) => {
-                    switch (tag) {
+                result.forEach(async (item) => {
+                    switch (tagName) {
                         case 'people':
                             if (!names.includes(item.name)) {
                                 names.push(item.name);
-                                tags.push(createTag({ id: `${tag}-${item.role}.${item.id}`, label: item.name }));
+                                tags.push(createTag({ id: `${tagName}-${item.role}.${item.id}`, label: item.name }));
                             }
                             break;
                         default:
-                            tags.push(createTag({ id: `${tag}-${item.id}`, label: item.title }));
+                            tags.push(createTag({ id: `${tagName}-${item.id}`, label: item.title }));
                     }
                 });
-                tagSections[tag] = createTagSection({
-                    id: `${i}`,
-                    label: tag,
+                tagSections[tagName] = createTagSection({
+                    id: tagName,
+                    label: tagName,
                     tags: tags
                 });
             }));
         }
         await Promise.all(promises);
-        return tags.map((tag) => tagSections[tag]);
+        return tagNames.map((tag) => tagSections[tag]);
     }
     async getHomePageSections(sectionCallback) {
         // This function is called on the homepage and should not throw if the server is unavailable
@@ -666,7 +702,7 @@ class Kavya extends paperback_extensions_common_1.Source {
         // We won't use `await this.getKavitaAPIUrl()` as we do not want to throw an error on
         // the homepage when server settings are not set
         const kavitaAPIUrl = await (0, Common_1.getKavitaAPIUrl)(this.stateManager);
-        const { showOnDeck, showRecentlyUpdated, showNewlyAdded } = await (0, Common_1.getOptions)(this.stateManager);
+        const { showOnDeck, showRecentlyUpdated, showNewlyAdded, excludeBookTypeLibrary } = await (0, Common_1.getOptions)(this.stateManager);
         // The source define two homepage sections: new and latest
         const sections = [];
         if (showOnDeck) {
@@ -696,7 +732,12 @@ class Kavya extends paperback_extensions_common_1.Source {
         });
         const response = await this.requestManager.schedule(request, 1);
         const result = JSON.parse(response.data);
+        const excludeLibraryIds = [];
         for (const library of result) {
+            if (excludeBookTypeLibrary && library.type === 2) {
+                excludeLibraryIds.push(library.id);
+                continue;
+            }
             sections.push(createHomeSection({
                 id: `${library.id}`,
                 title: library.name,
@@ -735,6 +776,9 @@ class Kavya extends paperback_extensions_common_1.Source {
                 let result = JSON.parse(response.data);
                 const tiles = [];
                 for (const series of result) {
+                    if (excludeBookTypeLibrary && excludeLibraryIds.includes(series.libraryId)) {
+                        continue;
+                    }
                     tiles.push(createMangaTile({
                         id: `${series[id]}`,
                         title: createIconText({ text: series[title] }),
@@ -802,7 +846,7 @@ const Common_1 = require("./Common");
 const KAVITA_PERSON_ROLES = {
     '1': 'other',
     '2': 'artist',
-    '3': 'writer',
+    '3': 'writers',
     '4': 'penciller',
     '5': 'inker',
     '6': 'colorist',
@@ -811,7 +855,7 @@ const KAVITA_PERSON_ROLES = {
     '9': 'editor',
     '10': 'publisher',
     '11': 'character',
-    '12': 'translators',
+    '12': 'translators' // KavitaAPI /api/series/all uses 'translators' instead of 'translator'
 };
 async function searchRequest(searchQuery, 
 // rome-ignore lint/suspicious/noExplicitAny: <explanation>
@@ -824,7 +868,21 @@ metadata, requestManager, interceptor, stateManager) {
         });
     }
     const kavitaAPIUrl = await (0, Common_1.getKavitaAPIUrl)(stateManager);
-    const enableRecursiveSearch = (await (0, Common_1.getOptions)(stateManager)).enableRecursiveSearch;
+    const { enableRecursiveSearch, excludeBookTypeLibrary } = await (0, Common_1.getOptions)(stateManager);
+    const excludeLibraryIds = [];
+    if (excludeBookTypeLibrary) {
+        const request = createRequestObject({
+            url: `${kavitaAPIUrl}/Library`,
+            method: 'GET'
+        });
+        const response = await requestManager.schedule(request, 1);
+        const result = JSON.parse(response.data);
+        for (const library of result) {
+            if (library.type === 2) {
+                excludeLibraryIds.push(library.id);
+            }
+        }
+    }
     const titleSearchIds = [];
     const tagSearchTiles = [];
     const titleSearchTiles = [];
@@ -839,6 +897,9 @@ metadata, requestManager, interceptor, stateManager) {
     const titleResponse = await requestManager.schedule(titleRequest, 1);
     const titleResult = JSON.parse(titleResponse.data);
     for (const manga of titleResult.series) {
+        if (excludeLibraryIds.includes(manga.libraryId)) {
+            continue;
+        }
         titleSearchIds.push(manga.seriesId);
         titleSearchTiles.push(createMangaTile({
             id: `${manga.seriesId}`,
@@ -847,11 +908,11 @@ metadata, requestManager, interceptor, stateManager) {
         }));
     }
     if (enableRecursiveSearch) {
-        const tags = ['persons', 'genres', 'tags'];
-        for (const tag of tags) {
-            for (const item of titleResult[tag]) {
+        const tagNames = ['persons', 'genres', 'tags'];
+        for (const tagName of tagNames) {
+            for (const item of titleResult[tagName]) {
                 let titleTagRequest;
-                switch (tag) {
+                switch (tagName) {
                     case 'persons':
                         titleTagRequest = createRequestObject({
                             url: `${kavitaAPIUrl}/Series/all`,
@@ -862,7 +923,7 @@ metadata, requestManager, interceptor, stateManager) {
                     default:
                         titleTagRequest = createRequestObject({
                             url: `${kavitaAPIUrl}/Series/all`,
-                            data: JSON.stringify({ [tag]: [item.id] }),
+                            data: JSON.stringify({ [tagName]: [item.id] }),
                             method: 'POST'
                         });
                 }
@@ -1035,6 +1096,18 @@ const serverSettingsMenu = (stateManager, interceptor) => {
                             id: 'enableRecursiveSearch',
                             label: 'Enable Recursive Search',
                             value: values.enableRecursiveSearch,
+                        })
+                    ]),
+                }),
+                createSection({
+                    id: "miscOptions",
+                    header: "Misc Options",
+                    footer: "",
+                    rows: async () => (0, Common_1.retrieveStateData)(stateManager).then((values) => [
+                        createSwitch({
+                            id: 'excludeBookTypeLibrary',
+                            label: 'Exclude Book Type Library',
+                            value: values.excludeBookTypeLibrary,
                         })
                     ]),
                 }),
