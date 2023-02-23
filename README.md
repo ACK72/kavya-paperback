@@ -8,7 +8,7 @@ You can install paperback extension source from below url
 [`https://ACK72.github.io/kavya-paperback`](https://ACK72.github.io/kavya-paperback)
 
 ## Syncronization
-Progress syncing per chapters is possible with [Kavya Tracker]()
+Progress syncing per chapters is possible with [Kavya Tracker](https://github.com/ACK72/kavya-paperback-tracker)
 
 ## Limitations
 
