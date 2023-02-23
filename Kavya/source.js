@@ -530,7 +530,7 @@ const sortHelper = (a, b) => {
         return ((a.volume ?? 0) > (b.volume ?? 0)) ? -1 : 1;
 };
 exports.KavyaInfo = {
-    version: '1.1.5',
+    version: '1.1.6',
     name: 'Kavya',
     icon: 'icon.png',
     author: 'ACK72',
@@ -581,15 +581,17 @@ class Kavya extends paperback_extensions_common_1.Source {
         const specials = [];
         for (const volume of result) {
             for (const chapter of volume.chapters) {
+                const name = (chapter.number === chapter.range ? '' : chapter.range.replace(`${chapter.number}-`, '')) + (chapter.titleName === '' ? '' : ` - ${chapter.titleName}`);
+                const title = chapter.range.endsWith('.epub') ? chapter.range.slice(0, -5) : chapter.range.slice(0, -4);
                 const item = createChapter({
                     id: `${chapter.id}`,
                     mangaId: mangaId,
                     chapNum: parseInt(chapter.number),
-                    name: chapter.titleName,
+                    name: chapter.isSpecial ? title : name,
                     time: new Date(chapter.releaseDate === '0001-01-01T00:00:00' ? chapter.lastModified : chapter.releaseDate),
                     volume: volume.number,
                     // @ts-ignore
-                    sortingIndex: 0
+                    langCode: ''
                 });
                 if (chapter.isSpecial)
                     specials.push(item);
@@ -599,7 +601,7 @@ class Kavya extends paperback_extensions_common_1.Source {
         }
         specials.sort(sortHelper);
         chapters.sort(sortHelper);
-        return chapters.concat(specials);
+        return specials.concat(chapters);
     }
     async getChapterDetails(mangaId, chapterId) {
         const kavitaAPIUrl = await (0, Common_1.getKavitaAPIUrl)(this.stateManager);
