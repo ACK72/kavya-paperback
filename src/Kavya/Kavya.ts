@@ -28,7 +28,7 @@ import {
 import { searchRequest } from './Search';
 
 export const KavyaInfo: SourceInfo = {
-	version: '1.1.3',
+	version: '1.1.4',
 	name: 'Kavya',
 	icon: 'icon.png',
 	author: 'ACK72',
