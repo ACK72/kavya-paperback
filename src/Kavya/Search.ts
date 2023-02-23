@@ -19,7 +19,7 @@ import {
 const KAVITA_PERSON_ROLES: any = {
 	'1': 'other',
 	'2': 'artist',
-	'3': 'writer',
+	'3': 'writers', // KavitaAPI /api/series/all uses 'writers' instead of 'writer'
 	'4': 'penciller',
 	'5': 'inker',
 	'6': 'colorist',
@@ -28,7 +28,7 @@ const KAVITA_PERSON_ROLES: any = {
 	'9': 'editor',
 	'10': 'publisher',
 	'11': 'character',
-	'12': 'translators',
+	'12': 'translators' // KavitaAPI /api/series/all uses 'translators' instead of 'translator'
 }
 
 export async function searchRequest(
@@ -49,7 +49,25 @@ export async function searchRequest(
 	}
 	
 	const kavitaAPIUrl = await getKavitaAPIUrl(stateManager);
-	const enableRecursiveSearch = (await getOptions(stateManager)).enableRecursiveSearch;
+	const {enableRecursiveSearch, excludeBookTypeLibrary} = await getOptions(stateManager);
+
+	const excludeLibraryIds: number[] = [];
+
+	if (excludeBookTypeLibrary) {
+		const request = createRequestObject({
+			url: `${kavitaAPIUrl}/Library`,
+			method: 'GET'
+		});
+
+		const response = await requestManager.schedule(request, 1);
+		const result = JSON.parse(response.data);
+
+		for (const library of result) {
+			if (library.type === 2) {
+				excludeLibraryIds.push(library.id);
+			}
+		}
+	}
 
 	const titleSearchIds: string[] = [];
 	
@@ -71,6 +89,10 @@ export async function searchRequest(
 	const titleResult = JSON.parse(titleResponse.data);
 
 	for (const manga of titleResult.series) {
+		if (excludeLibraryIds.includes(manga.libraryId)) {
+			continue;
+		}
+
 		titleSearchIds.push(manga.seriesId);
 		titleSearchTiles.push(
 			createMangaTile({

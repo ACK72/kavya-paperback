@@ -91,6 +91,18 @@ export const serverSettingsMenu = (
 						})
 					]),
 				}),
+				createSection({
+					id: "miscOptions",
+					header: "Misc Options",
+					footer: "",
+					rows: async () => retrieveStateData(stateManager).then((values) => [
+						createSwitch({
+							id: 'excludeBookTypeLibrary',
+							label: 'Exclude Book Type Kavita Library',
+							value: values.excludeBookTypeLibrary,
+						})
+					]),
+				}),
 			],
 		}),
 	});

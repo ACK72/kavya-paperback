@@ -294,7 +294,7 @@ export class Kavya extends Source {
 		// We won't use `await this.getKavitaAPIUrl()` as we do not want to throw an error on
 		// the homepage when server settings are not set
 		const kavitaAPIUrl = await getKavitaAPIUrl(this.stateManager);
-		const {showOnDeck, showRecentlyUpdated, showNewlyAdded} = await getOptions(this.stateManager);
+		const {showOnDeck, showRecentlyUpdated, showNewlyAdded, excludeBookTypeLibrary} = await getOptions(this.stateManager);
 
 		// The source define two homepage sections: new and latest
 		const sections = [];
@@ -330,8 +330,15 @@ export class Kavya extends Source {
 
 		const response = await this.requestManager.schedule(request, 1);
 		const result = JSON.parse(response.data);
+
+		const excludeLibraryIds: number[] = [];
 		
 		for (const library of result) {
+			if (excludeBookTypeLibrary && library.type === 2) {
+				excludeLibraryIds.push(library.id);
+				continue;
+			}
+
 			sections.push(createHomeSection({
 				id: `${library.id}`,
 				title: library.name,
@@ -378,6 +385,10 @@ export class Kavya extends Source {
 					const tiles: MangaTile[] = [];
 					
 					for (const series of result) {
+						if (excludeBookTypeLibrary && excludeLibraryIds.includes(series.libraryId)) {
+							continue;
+						}
+
 						tiles.push(
 							createMangaTile({
 								id: `${series[id]}`,
