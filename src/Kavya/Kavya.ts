@@ -90,15 +90,17 @@ export class Kavya extends Source {
 
 		for (const volume of result) {
 			for (const chapter of volume.chapters) {
+				const name = (chapter.number === chapter.range ? '' : chapter.range.replace(`${chapter.number}-`, '')) + (chapter.titleName === '' ? '' : ` - ${chapter.titleName}`);
+				const title = chapter.range.endsWith('.epub') ? chapter.range.slice(0, -5) : chapter.range.slice(0, -4);
 				const item = createChapter({
 					id: `${chapter.id}`,
 					mangaId: mangaId,
 					chapNum: parseInt(chapter.number),
-					name: chapter.titleName,
+					name: chapter.isSpecial ? title : name,
 					time: new Date(chapter.releaseDate === '0001-01-01T00:00:00' ? chapter.lastModified : chapter.releaseDate),
 					volume: volume.number,
 					// @ts-ignore
-					sortingIndex: 0
+					langCode: ''
 				});
 
 				if (chapter.isSpecial) specials.push(item);
@@ -109,7 +111,7 @@ export class Kavya extends Source {
 		specials.sort(sortHelper);
 		chapters.sort(sortHelper);
 
-		return chapters.concat(specials);
+		return specials.concat(chapters);
 	}
 
 	async getChapterDetails(
