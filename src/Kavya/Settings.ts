@@ -98,7 +98,7 @@ export const serverSettingsMenu = (
 					rows: async () => retrieveStateData(stateManager).then((values) => [
 						createSwitch({
 							id: 'excludeBookTypeLibrary',
-							label: 'Exclude Book Type Kavita Library',
+							label: 'Exclude Book Type Library',
 							value: values.excludeBookTypeLibrary,
 						})
 					]),

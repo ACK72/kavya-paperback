@@ -247,6 +247,22 @@ export class Kavya extends Source {
 		}
 
 		const kavitaAPIUrl = await getKavitaAPIUrl(this.stateManager);
+		const {excludeBookTypeLibrary} = await getOptions(this.stateManager);
+
+		const includeLibraryIds: string[] = [];
+
+		const libraryRequest = createRequestObject({
+			url: `${kavitaAPIUrl}/Library`,
+			method: 'GET',
+		});
+
+		const libraryResponse = await this.requestManager.schedule(libraryRequest, 1);
+		const libraryResult = JSON.parse(libraryResponse.data);
+
+		for (const library of libraryResult) {
+			if (excludeBookTypeLibrary && library.type === 2) continue;
+			includeLibraryIds.push(library.id);
+		}
 		
 		const tagNames: string[] = ['genres', 'people', 'tags'];
 		// rome-ignore lint/suspicious/noExplicitAny: <explanation>
@@ -257,6 +273,7 @@ export class Kavya extends Source {
 		for (const tagName of tagNames) {
 			const request = createRequestObject({
 				url: `${kavitaAPIUrl}/Metadata/${tagName}`,
+				param: `?libraryIds=${includeLibraryIds.join(',')}`,
 				method: 'GET',
 			});
 
@@ -268,7 +285,7 @@ export class Kavya extends Source {
 					const tags: Tag[] = [];
 
 					// rome-ignore lint/suspicious/noExplicitAny: <explanation>
-					result.forEach((item: any) => {
+					result.forEach(async (item: any) => {
 						switch (tagName) {
 							case 'people':
 								if (!names.includes(item.name)) {

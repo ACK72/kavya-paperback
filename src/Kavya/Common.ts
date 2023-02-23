@@ -108,7 +108,14 @@ async function setKavitaServer(stateManager: SourceStateManager, apiUri: string,
 	await stateManager.keychain.store('kavitaAPIKey', apiKey)
 }
 
-async function setOptions(stateManager: SourceStateManager, showOnDeck: boolean, showRecentlyUpdated: boolean, showNewlyAdded: boolean, enableRecursiveSearch: boolean, excludeBookTypeLibrary: boolean) {
+async function setOptions(
+	stateManager: SourceStateManager,
+	showOnDeck: boolean,
+	showRecentlyUpdated: boolean,
+	showNewlyAdded: boolean,
+	enableRecursiveSearch: boolean,
+	excludeBookTypeLibrary: boolean
+) {
 	await stateManager.store('showOnDeck', showOnDeck)
 	await stateManager.store('showRecentlyUpdated', showRecentlyUpdated)
 	await stateManager.store('showNewlyAdded', showNewlyAdded)
