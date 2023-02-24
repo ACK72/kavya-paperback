@@ -152,7 +152,7 @@ export class Kavya extends Source {
 		const result = typeof response.data === 'string' ? JSON.parse(response.data) : response.data;
 
 		const pages: string[] = [];
-		for (let i = 0;i <= result.pages;i++) {
+		for (let i = 0;i < result.pages;i++) {
 			pages.push(`${kavitaAPIUrl}/Reader/image?chapterId=${chapterId}&page=${i}&extractPdf=true`);
 		}
 

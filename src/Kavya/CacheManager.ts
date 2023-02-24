@@ -1,12 +1,12 @@
 export class CacheManager {
 	// rome-ignore lint/suspicious/noExplicitAny: <explanation>
-	private cachedData: { [key: string]: { time: Date, data: any } };
+	private cachedData: { [key: number]: { time: Date, data: any } };
 
 	constructor() {
 		this.cachedData = {};
 	}
 
-	getHash(str: string) {
+	getHash(str: string): number {
 		let hash = 0
 		let chr;
 
