@@ -29,6 +29,12 @@ import {
 import { searchRequest } from './Search';
 import { CacheManager } from './CacheManager';
 
+// rome-ignore lint/suspicious/noExplicitAny: <explanation>
+const sortHelper = (a: any, b: any) => {
+	if (a.volume === b.volume) return a.chapNum === b.chapNum ? a._index - b._index : a.chapNum - b.chapNum;
+	return a.volume - b.volume;
+}
+
 export const KavyaInfo: SourceInfo = {
 	version: '1.2.0',
 	name: 'Kavya',
@@ -87,8 +93,9 @@ export class Kavya extends Source {
 
 		// rome-ignore lint/suspicious/noExplicitAny: <explanation>
 		// rome-ignore lint/style/useSingleVarDeclarator: <explanation>
-		const  chapters: any[] = [], specials: any[] = [];
+		const chapters: any[] = [], specials: any[] = [];
 
+		let i = 0;
 		for (const volume of result) {
 			for (const chapter of volume.chapters) {
 				const name: string = (chapter.number === chapter.range ? '' : chapter.range.replace(`${chapter.number}-`, '')) + (chapter.titleName === '' ? '' : ` - ${chapter.titleName}`);
@@ -104,6 +111,7 @@ export class Kavya extends Source {
 					name: chapter.isSpecial ? title : name,
 					time: new Date(chapter.releaseDate === '0001-01-01T00:00:00' ? chapter.lastModified : chapter.releaseDate),
 					volume: volume.number,
+					_index: i++
 				};
 				
 				if (chapter.isSpecial) {
@@ -116,6 +124,7 @@ export class Kavya extends Source {
 			}
 		}
 
+		chapters.sort(sortHelper);
 		return chapters.concat(specials).map((item, index) => {
 			const chapter = createChapter({
 				...item,

@@ -32,12 +32,12 @@ const KAVITA_PERSON_ROLES: any = {
 }
 
 export async function searchRequest(
-    searchQuery: SearchRequest,
-    // rome-ignore lint/suspicious/noExplicitAny: <explanation>
+	searchQuery: SearchRequest,
+	// rome-ignore lint/suspicious/noExplicitAny: <explanation>
 	metadata: any,
-    requestManager: RequestManager,
+	requestManager: RequestManager,
 	interceptor: KavitaRequestInterceptor,
-    stateManager: SourceStateManager,
+	stateManager: SourceStateManager,
 	cacheManager: CacheManager
 ) {
 	// This function is also called when the user search in an other source. It should not throw if the server is unavailable.
@@ -77,7 +77,7 @@ export async function searchRequest(
 	const titleSearchTiles: MangaTile[] = [];
 
 	// rome-ignore lint/suspicious/noExplicitAny: <explanation>
-	let  result: any;
+	let result: any;
 	if (cacheManager.getCachedData(searchRequestToString(searchQuery)) !== undefined) {
 		result = cacheManager.getCachedData(searchRequestToString(searchQuery));
 	} else {
