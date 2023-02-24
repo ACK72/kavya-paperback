@@ -71,77 +71,76 @@ export async function searchRequest(
 	
 	const tagSearchTiles: MangaTile[] = [];
 	const titleSearchTiles: MangaTile[] = [];
-	
-	let peopleSearchTiles: MangaTile[] = [];
 
-	const queryString = (typeof searchQuery.title === 'undefined' || searchQuery.title === '') ? '""' : searchQuery.title;
+	if (typeof searchQuery.title === 'string' && searchQuery.title !== '') {			
+		const titleRequest = createRequestObject({
+			url: `${kavitaAPIUrl}/Search/search`,
+			param: `?queryString=${encodeURIComponent(searchQuery.title)}`,
+			method: 'GET'
+		});
 
-	const titleRequest = createRequestObject({
-		url: `${kavitaAPIUrl}/Search/search`,
-		param: `?queryString=${encodeURIComponent(queryString)}`,
-		method: 'GET'
-	});
+		// We don't want to throw if the server is unavailable
+		const titleResponse = await requestManager.schedule(titleRequest, 1);
+		const titleResult = JSON.parse(titleResponse.data);
 
-	// We don't want to throw if the server is unavailable
-	const titleResponse = await requestManager.schedule(titleRequest, 1);
-	const titleResult = JSON.parse(titleResponse.data);
+		for (const manga of titleResult.series) {
+			if (excludeLibraryIds.includes(manga.libraryId)) {
+				continue;
+			}
 
-	for (const manga of titleResult.series) {
-		if (excludeLibraryIds.includes(manga.libraryId)) {
-			continue;
+			titleSearchIds.push(manga.seriesId);
+			titleSearchTiles.push(
+				createMangaTile({
+					id: `${manga.seriesId}`,
+					title: createIconText({text: manga.name}),
+					image: `${kavitaAPIUrl}/image/series-cover?seriesId=${manga.seriesId}`
+				})
+			);
 		}
 
-		titleSearchIds.push(manga.seriesId);
-		titleSearchTiles.push(
-			createMangaTile({
-				id: `${manga.seriesId}`,
-				title: createIconText({text: manga.name}),
-				image: `${kavitaAPIUrl}/image/series-cover?seriesId=${manga.seriesId}`
-			})
-		);
-	}
+		if (enableRecursiveSearch) {
+			const tagNames: string[] = ['persons', 'genres', 'tags'];
 
-	if (enableRecursiveSearch) {
-		const tagNames: string[] = ['persons', 'genres', 'tags'];
+			for (const tagName of tagNames) {
+				for (const item of titleResult[tagName]) {
+					let titleTagRequest: Request;
 
-		for (const tagName of tagNames) {
-			for (const item of titleResult[tagName]) {
-				let titleTagRequest: Request;
+					switch (tagName) {
+						case 'persons':
+							titleTagRequest = createRequestObject({
+								url: `${kavitaAPIUrl}/Series/all`,
+								data: JSON.stringify({[KAVITA_PERSON_ROLES[item.role]]: [item.id]}),
+								method: 'POST'
+							});
+							break;
+						default:
+							titleTagRequest = createRequestObject({
+								url: `${kavitaAPIUrl}/Series/all`,
+								data: JSON.stringify({[tagName]: [item.id]}),
+								method: 'POST'
+							});
+					}
 
-				switch (tagName) {
-					case 'persons':
-						titleTagRequest = createRequestObject({
-							url: `${kavitaAPIUrl}/Series/all`,
-							data: JSON.stringify({[KAVITA_PERSON_ROLES[item.role]]: [item.id]}),
-							method: 'POST'
-						});
-						break;
-					default:
-						titleTagRequest = createRequestObject({
-							url: `${kavitaAPIUrl}/Series/all`,
-							data: JSON.stringify({[tagName]: [item.id]}),
-							method: 'POST'
-						});
-				}
+					const titleTagResponse = await requestManager.schedule(titleTagRequest, 1);
+					const titleTagResult = JSON.parse(titleTagResponse.data);
 
-				const titleTagResponse = await requestManager.schedule(titleTagRequest, 1);
-				const titleTagResult = JSON.parse(titleTagResponse.data);
-
-				for (const manga of titleTagResult) {
-					if (!titleSearchIds.includes(manga.id)) {
-						titleSearchIds.push(manga.id);
-						titleSearchTiles.push(
-							createMangaTile({
-								id: `${manga.id}`,
-								title: createIconText({text: manga.name}),
-								image: `${kavitaAPIUrl}/image/series-cover?seriesId=${manga.id}`
-							})
-						);
+					for (const manga of titleTagResult) {
+						if (!titleSearchIds.includes(manga.id)) {
+							titleSearchIds.push(manga.id);
+							titleSearchTiles.push(
+								createMangaTile({
+									id: `${manga.id}`,
+									title: createIconText({text: manga.name}),
+									image: `${kavitaAPIUrl}/image/series-cover?seriesId=${manga.id}`
+								})
+							);
+						}
 					}
 				}
 			}
 		}
 	}
+
 
 	if (typeof searchQuery.includedTags !== 'undefined') {
 		// rome-ignore lint/suspicious/noExplicitAny: <explanation>
@@ -154,12 +153,25 @@ export async function searchRequest(
 					peopleTags.push(tag.label);
 					break;
 				default:
-					body = {
-						...body,
-						[tag.id.split('-')[0] ?? '']: [parseInt(tag.id.split('-')[1] ?? '0')]
-					}
+					body[tag.id.split('-')[0] ?? ''] = body[tag.id.split('-')[0] ?? ''] ?? []
+					body[tag.id.split('-')[0] ?? ''].push(parseInt(tag.id.split('-')[1] ?? '0'));
 			}
 		});
+
+		const peopleRequest = createRequestObject({
+			url: `${kavitaAPIUrl}/Metadata/people`,
+			method: 'GET'
+		});
+
+		const peopleResponse = await requestManager.schedule(peopleRequest, 1);
+		const peopleResult = JSON.parse(peopleResponse.data);
+
+		for (const people of peopleResult) {
+			if (peopleTags.includes(people.name)) {
+				body[KAVITA_PERSON_ROLES[people.role]] = body[KAVITA_PERSON_ROLES[people.role]] ?? [];
+				body[KAVITA_PERSON_ROLES[people.role]].push(people.id);
+			}
+		}
 
 		const tagRequst = createRequestObject({
 			url: `${kavitaAPIUrl}/Series/all`,
@@ -179,59 +191,9 @@ export async function searchRequest(
 				})
 			);
 		}
-
-		const peopleRequest = createRequestObject({
-			url: `${kavitaAPIUrl}/Metadata/people`,
-			method: 'GET'
-		});
-
-		const peopleResponse = await requestManager.schedule(peopleRequest, 1);
-		const peopleResult = JSON.parse(peopleResponse.data);
-
-		const promises: Promise<MangaTile[]>[] = [];
-
-		for (const people of peopleResult) {
-			if (peopleTags.includes(people.name)) {
-				const request = createRequestObject({
-					url: `${kavitaAPIUrl}/Series/all`,
-					data: JSON.stringify({[KAVITA_PERSON_ROLES[people.role]]: [people.id]}),
-					method: 'POST'
-				});
-
-				promises.push(
-					(requestManager.schedule(request, 1).then((response) => {
-						const result = JSON.parse(response.data);
-						const tiles: MangaTile[] = [];
-
-						for (const manga of result) {
-							tiles.push(
-								createMangaTile({
-									id: `${manga.id}`,
-									title: createIconText({text: manga.name}),
-									image: `${kavitaAPIUrl}/image/series-cover?seriesId=${manga.id}`
-								})
-							)
-						}
-
-						return tiles;
-					}))
-				);
-			}
-		}
-
-		peopleSearchTiles = (await Promise.all(promises)).flat();
-
-		// Remove duplicates
-		// as tile.id returns undefined (but, why ???), we use image instead
-		peopleSearchTiles = peopleSearchTiles.filter((value, index, self) => index === self.findIndex((target) => target.image === value.image))
-
-		// intersection of tagSearchTiles and peopleSearchTiles
-		peopleSearchTiles = peopleSearchTiles.length > 0 ? peopleSearchTiles.filter((value) => tagSearchTiles.some((target) => target.image === value.image)) : tagSearchTiles;
 	}
 
-	peopleSearchTiles = peopleSearchTiles.length > 0 ? peopleSearchTiles.filter((value) => titleSearchTiles.some((target) => target.image === value.image)) : titleSearchTiles;
-
 	return createPagedResults({
-		results: peopleSearchTiles
+		results: (tagSearchTiles.length > 0 && titleSearchTiles.length > 0) ? tagSearchTiles.filter((value) => titleSearchTiles.some((target) => target.image === value.image)) : titleSearchTiles.concat(tagSearchTiles)
 	});
 }
