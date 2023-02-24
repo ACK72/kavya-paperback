@@ -574,8 +574,14 @@ const Settings_1 = require("./Settings");
 const Common_1 = require("./Common");
 const Search_1 = require("./Search");
 const CacheManager_1 = require("./CacheManager");
+// rome-ignore lint/suspicious/noExplicitAny: <explanation>
+const sortHelper = (a, b) => {
+    if (a.volume === b.volume)
+        return a.chapNum === b.chapNum ? a._index - b._index : a.chapNum - b.chapNum;
+    return a.volume - b.volume;
+};
 exports.KavyaInfo = {
-    version: '1.2.0',
+    version: '1.2.1',
     name: 'Kavya',
     icon: 'icon.png',
     author: 'ACK72',
@@ -627,6 +633,7 @@ class Kavya extends paperback_extensions_common_1.Source {
         // rome-ignore lint/suspicious/noExplicitAny: <explanation>
         // rome-ignore lint/style/useSingleVarDeclarator: <explanation>
         const chapters = [], specials = [];
+        let i = 0;
         for (const volume of result) {
             for (const chapter of volume.chapters) {
                 const name = (chapter.number === chapter.range ? '' : chapter.range.replace(`${chapter.number}-`, '')) + (chapter.titleName === '' ? '' : ` - ${chapter.titleName}`);
@@ -641,6 +648,7 @@ class Kavya extends paperback_extensions_common_1.Source {
                     name: chapter.isSpecial ? title : name,
                     time: new Date(chapter.releaseDate === '0001-01-01T00:00:00' ? chapter.lastModified : chapter.releaseDate),
                     volume: volume.number,
+                    _index: i++
                 };
                 if (chapter.isSpecial) {
                     item.group = `Specials   ${progress}`;
@@ -652,6 +660,7 @@ class Kavya extends paperback_extensions_common_1.Source {
                 }
             }
         }
+        chapters.sort(sortHelper);
         return chapters.concat(specials).map((item, index) => {
             const chapter = createChapter({
                 ...item,
