@@ -27,11 +27,6 @@ import {
 } from './Common';
 import { searchRequest } from './Search';
 
-const sortHelper = (a: Chapter, b: Chapter) => {
-	if (a.volume === b.volume) return (a.chapNum > b.chapNum) ? -1 : 1;
-	else return ((a.volume ?? 0) > (b.volume ?? 0)) ? -1 : 1;
-}
-
 export const KavyaInfo: SourceInfo = {
 	version: '1.1.6',
 	name: 'Kavya',
@@ -75,6 +70,7 @@ export class Kavya extends Source {
 
 	async getChapters(mangaId: string): Promise<Chapter[]> {
 		const kavitaAPIUrl = await getKavitaAPIUrl(this.stateManager);
+		const { displayReadInstedOfUnread } = await getOptions(this.stateManager);
 
 		const request = createRequestObject({
 			url: `${kavitaAPIUrl}/Series/volumes`,
@@ -85,33 +81,46 @@ export class Kavya extends Source {
 		const response = await this.requestManager.schedule(request, 1);
 		const result = typeof response.data === 'string' ? JSON.parse(response.data) : response.data;
 
-		const chapters: Chapter[] = [];
-		const specials: Chapter[] = [];
+		// rome-ignore lint/suspicious/noExplicitAny: <explanation>
+		// rome-ignore lint/style/useSingleVarDeclarator: <explanation>
+		const  chapters: any[] = [], specials: any[] = [];
 
 		for (const volume of result) {
 			for (const chapter of volume.chapters) {
-				const name = (chapter.number === chapter.range ? '' : chapter.range.replace(`${chapter.number}-`, '')) + (chapter.titleName === '' ? '' : ` - ${chapter.titleName}`);
-				const title = chapter.range.endsWith('.epub') ? chapter.range.slice(0, -5) : chapter.range.slice(0, -4);
-				const item = createChapter({
+				const name: string = (chapter.number === chapter.range ? '' : chapter.range.replace(`${chapter.number}-`, '')) + (chapter.titleName === '' ? '' : ` - ${chapter.titleName}`);
+				const title: string = chapter.range.endsWith('.epub') ? chapter.range.slice(0, -5) : chapter.range.slice(0, -4);
+				const progress: string = displayReadInstedOfUnread ? (chapter.pagesRead === 0 ? '' : chapter.pages === chapter.pagesRead ? 'Read' : `Reading ${chapter.pagesRead}/${chapter.pages}`)
+					: (chapter.pagesRead === 0 ? 'Unread' : chapter.pages === chapter.pagesRead ? '' : `Reading ${chapter.pagesRead}/${chapter.pages}`);
+				
+				// rome-ignore lint/suspicious/noExplicitAny: <explanation>
+				const item: any = {
 					id: `${chapter.id}`,
 					mangaId: mangaId,
 					chapNum: parseInt(chapter.number),
 					name: chapter.isSpecial ? title : name,
 					time: new Date(chapter.releaseDate === '0001-01-01T00:00:00' ? chapter.lastModified : chapter.releaseDate),
 					volume: volume.number,
-					// @ts-ignore
-					langCode: ''
-				});
-
-				if (chapter.isSpecial) specials.push(item);
-				else chapters.push(item);
+				};
+				
+				if (chapter.isSpecial) {
+					item.group = `Specials   ${progress}`;
+					specials.push(item);
+				} else {
+					item.group = `${progress}`;
+					chapters.push(item);
+				}
 			}
 		}
 
-		specials.sort(sortHelper);
-		chapters.sort(sortHelper);
+		return chapters.concat(specials).map((item, index) => {
+			const chapter = createChapter({
+				...item,
+				chapNum: index
+			});
 
-		return specials.concat(chapters);
+			chapter.chapNum = item.chapNum;
+			return chapter;
+		});
 	}
 
 	async getChapterDetails(

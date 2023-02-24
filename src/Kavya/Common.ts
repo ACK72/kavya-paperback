@@ -137,10 +137,9 @@ export const DEFAULT_VALUES: any = {
 	showOnDeck: true,
 	showRecentlyUpdated: true,
 	showNewlyAdded: true,
-
+	excludeBookTypeLibrary: false, 
 	enableRecursiveSearch: false,
-
-	excludeBookTypeLibrary: false
+	displayReadInstedOfUnread: true
 }
 
 export async function getKavitaAPIUrl(stateManager: SourceStateManager): Promise<string> {
@@ -166,16 +165,24 @@ export async function getAuthorizationString(stateManager: SourceStateManager): 
 	return token ? `Bearer ${token}` : '';
 }
 
-export async function getOptions(stateManager: SourceStateManager): Promise<{ showOnDeck: boolean; showRecentlyUpdated: boolean; showNewlyAdded: boolean; enableRecursiveSearch: boolean; excludeBookTypeLibrary: boolean }> {
+export async function getOptions(
+	stateManager: SourceStateManager
+): Promise<{
+	showOnDeck: boolean;
+	showRecentlyUpdated: boolean;
+	showNewlyAdded: boolean;
+	excludeBookTypeLibrary: boolean;
+	enableRecursiveSearch: boolean;
+	displayReadInstedOfUnread: boolean;
+}> {
 	const showOnDeck = (await stateManager.retrieve('showOnDeck') as boolean) ?? DEFAULT_VALUES.showOnDeck;
 	const showRecentlyUpdated = (await stateManager.retrieve('showRecentlyUpdated') as boolean) ?? DEFAULT_VALUES.showRecentlyUpdated;
 	const showNewlyAdded = (await stateManager.retrieve('showNewlyAdded') as boolean) ?? DEFAULT_VALUES.showNewlyAdded;
-
-	const enableRecursiveSearch = (await stateManager.retrieve('enableRecursiveSearch') as boolean) ?? DEFAULT_VALUES.enableRecursiveSearch;
-
 	const excludeBookTypeLibrary = (await stateManager.retrieve('excludeBookTypeLibrary') as boolean) ?? DEFAULT_VALUES.excludeBookTypeLibrary;
+	const enableRecursiveSearch = (await stateManager.retrieve('enableRecursiveSearch') as boolean) ?? DEFAULT_VALUES.enableRecursiveSearch;
+	const displayReadInstedOfUnread = (await stateManager.retrieve('displayReadInstedOfUnread') as boolean) ?? DEFAULT_VALUES.displayReadInstedOfUnread;
 
-	return { showOnDeck, showRecentlyUpdated, showNewlyAdded, enableRecursiveSearch, excludeBookTypeLibrary };
+	return { showOnDeck, showRecentlyUpdated, showNewlyAdded, excludeBookTypeLibrary, enableRecursiveSearch, displayReadInstedOfUnread };
 }
 
 //
