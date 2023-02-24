@@ -30,7 +30,7 @@ import { searchRequest } from './Search';
 import { CacheManager } from './CacheManager';
 
 export const KavyaInfo: SourceInfo = {
-	version: '1.1.6',
+	version: '1.2.0',
 	name: 'Kavya',
 	icon: 'icon.png',
 	author: 'ACK72',
