@@ -581,7 +581,7 @@ const sortHelper = (a, b) => {
     return a.volume - b.volume;
 };
 exports.KavyaInfo = {
-    version: '1.2.1',
+    version: '1.2.2',
     name: 'Kavya',
     icon: 'icon.png',
     author: 'ACK72',
@@ -680,7 +680,7 @@ class Kavya extends paperback_extensions_common_1.Source {
         const response = await this.requestManager.schedule(request, 1);
         const result = typeof response.data === 'string' ? JSON.parse(response.data) : response.data;
         const pages = [];
-        for (let i = 0; i <= result.pages; i++) {
+        for (let i = 0; i < result.pages; i++) {
             pages.push(`${kavitaAPIUrl}/Reader/image?chapterId=${chapterId}&page=${i}&extractPdf=true`);
         }
         return createChapterDetails({
