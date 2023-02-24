@@ -4,10 +4,12 @@ import {
 	RequestInterceptor,
 	RequestManager,
 	Response,
+	SearchRequest,
 	SourceStateManager,
 	Tag,
 	TagSection,
 } from 'paperback-extensions-common';
+
 
 //
 // Kavya Common Class & Methods
@@ -125,6 +127,22 @@ export async function getSeriesDetails(mangaId: string, requestManager: RequestM
 	});
 }
 
+export function reqeustToString(request: Request): string {
+	return JSON.stringify({
+		url: request.url,
+		data: request.data,
+		method: request.method
+	});
+}
+
+export function searchRequestToString(searchQuery: SearchRequest): string {
+	return JSON.stringify({
+		title: searchQuery.title,
+		tags: searchQuery.includedTags?.map(tag => tag.id)
+	});
+}
+
+
 // 
 // Kavya Setting State Methods
 //
@@ -139,7 +157,8 @@ export const DEFAULT_VALUES: any = {
 	showNewlyAdded: true,
 	excludeBookTypeLibrary: false, 
 	enableRecursiveSearch: false,
-	displayReadInstedOfUnread: true
+	displayReadInstedOfUnread: true,
+	pageSize: 40
 }
 
 export async function getKavitaAPIUrl(stateManager: SourceStateManager): Promise<string> {
@@ -174,6 +193,7 @@ export async function getOptions(
 	excludeBookTypeLibrary: boolean;
 	enableRecursiveSearch: boolean;
 	displayReadInstedOfUnread: boolean;
+	pageSize: number;
 }> {
 	const showOnDeck = (await stateManager.retrieve('showOnDeck') as boolean) ?? DEFAULT_VALUES.showOnDeck;
 	const showRecentlyUpdated = (await stateManager.retrieve('showRecentlyUpdated') as boolean) ?? DEFAULT_VALUES.showRecentlyUpdated;
@@ -181,9 +201,11 @@ export async function getOptions(
 	const excludeBookTypeLibrary = (await stateManager.retrieve('excludeBookTypeLibrary') as boolean) ?? DEFAULT_VALUES.excludeBookTypeLibrary;
 	const enableRecursiveSearch = (await stateManager.retrieve('enableRecursiveSearch') as boolean) ?? DEFAULT_VALUES.enableRecursiveSearch;
 	const displayReadInstedOfUnread = (await stateManager.retrieve('displayReadInstedOfUnread') as boolean) ?? DEFAULT_VALUES.displayReadInstedOfUnread;
+	const pageSize = (await stateManager.retrieve('pageSize') as number) ?? DEFAULT_VALUES.pageSize;
 
-	return { showOnDeck, showRecentlyUpdated, showNewlyAdded, excludeBookTypeLibrary, enableRecursiveSearch, displayReadInstedOfUnread };
+	return { showOnDeck, showRecentlyUpdated, showNewlyAdded, excludeBookTypeLibrary, enableRecursiveSearch, displayReadInstedOfUnread, pageSize };
 }
+
 
 //
 // Kavya Logging Methods

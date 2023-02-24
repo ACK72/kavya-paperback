@@ -54,6 +54,13 @@ export const serverSettingsMenu = (
 							placeholder: "Kavita API Key",
 							value: values.kavitaAPIKey
 						}),
+						createInputField({
+							id: 'pageSize',
+							label: 'Page Size',
+							placeholder: 'Recommended size is 20 for iOS and 40 for iPadOS',
+							value: values.pageSize.toString(),
+							maskInput: false,
+						})
 					]),
 				}),
 				createSection({
@@ -122,48 +129,34 @@ export async function retrieveStateData(stateManager: SourceStateManager) {
 	const excludeBookTypeLibrary = (await stateManager.retrieve('excludeBookTypeLibrary') as boolean) ?? DEFAULT_VALUES.excludeBookTypeLibrary;
 	const enableRecursiveSearch = (await stateManager.retrieve('enableRecursiveSearch') as boolean) ?? DEFAULT_VALUES.enableRecursiveSearch;
 	const displayReadInstedOfUnread = (await stateManager.retrieve('displayReadInstedOfUnread') as boolean) ?? DEFAULT_VALUES.displayReadInstedOfUnread;
+	const pageSize = (await stateManager.retrieve('pageSize') as number) ?? DEFAULT_VALUES.pageSize;
 
-	return { kavitaURL, kavitaAPIKey, showOnDeck, showRecentlyUpdated, showNewlyAdded, excludeBookTypeLibrary, enableRecursiveSearch, displayReadInstedOfUnread }
+	return { kavitaURL, kavitaAPIKey, showOnDeck, showRecentlyUpdated, showNewlyAdded, excludeBookTypeLibrary, enableRecursiveSearch, displayReadInstedOfUnread, pageSize }
 }
 
 // rome-ignore lint/suspicious/noExplicitAny: <explanation>
 export async function setStateData(stateManager: SourceStateManager, interceptor: KavitaRequestInterceptor, data: Record<string, any>) {
-	await setKavitaServer(
-		stateManager,
-		data['kavitaAddress'] ?? DEFAULT_VALUES.kavitaAddress,
-		data['kavitaAPIKey'] ?? DEFAULT_VALUES.kavitaAPIKey,
-	);
+	const apiUri = data['kavitaAddress'] ?? DEFAULT_VALUES.kavitaAddress;
+	const pageSize = typeof data['pageSize'] === 'string' ? parseInt(data['pageSize']) === 0 ? DEFAULT_VALUES.pageSize : parseInt(data['pageSize']) : DEFAULT_VALUES.pageSize;
+
+	let promises: Promise<void>[] = [];
+
+	promises.push(stateManager.store('kavitaAddress', apiUri));
+	promises.push(stateManager.store('kavitaAPIUrl', apiUri + (apiUri.slice(-1) === '/' ? 'api' : '/api')));
+	promises.push(stateManager.keychain.store('kavitaAPIKey', data['kavitaAPIKey'] ?? DEFAULT_VALUES.kavitaAPIKey));
+	promises.push(stateManager.store('pageSize', pageSize));
+	
+	await Promise.all(promises);
 	await interceptor.updateAuthorization();
-	await setOptions(
-		stateManager,
-		data['showOnDeck'] ?? DEFAULT_VALUES.showOnDeck,
-		data['showRecentlyUpdated'] ?? DEFAULT_VALUES.showRecentlyUpdated,
-		data['showNewlyAdded'] ?? DEFAULT_VALUES.showNewlyAdded,
-		data['excludeBookTypeLibrary'] ?? DEFAULT_VALUES.excludeBookTypeLibrary,
-		data['enableRecursiveSearch'] ?? DEFAULT_VALUES.enableRecursiveSearch,
-		data['displayReadInstedOfUnread'] ?? DEFAULT_VALUES.displayReadInstedOfUnread
-	);
-}
 
-async function setKavitaServer(stateManager: SourceStateManager, apiUri: string, apiKey: string) {
-	await stateManager.store('kavitaAddress', apiUri);
-	await stateManager.store('kavitaAPIUrl', apiUri + (apiUri.slice(-1) === '/' ? 'api' : '/api'));
-	await stateManager.keychain.store('kavitaAPIKey', apiKey);
-}
+	promises = [];
 
-async function setOptions(
-	stateManager: SourceStateManager,
-	showOnDeck: boolean,
-	showRecentlyUpdated: boolean,
-	showNewlyAdded: boolean,
-	excludeBookTypeLibrary: boolean,
-	enableRecursiveSearch: boolean,
-	displayReadInstedOfUnread: boolean
-) {
-	await stateManager.store('showOnDeck', showOnDeck);
-	await stateManager.store('showRecentlyUpdated', showRecentlyUpdated);
-	await stateManager.store('showNewlyAdded', showNewlyAdded);
-	await stateManager.store('excludeBookTypeLibrary', excludeBookTypeLibrary);
-	await stateManager.store('enableRecursiveSearch', enableRecursiveSearch);
-	await stateManager.store('displayReadInstedOfUnread', displayReadInstedOfUnread);
+	promises.push(stateManager.store('showOnDeck', data['showOnDeck'] ?? DEFAULT_VALUES.showOnDeck));
+	promises.push(stateManager.store('showRecentlyUpdated', data['showRecentlyUpdated'] ?? DEFAULT_VALUES.showRecentlyUpdated));
+	promises.push(stateManager.store('showNewlyAdded', data['showNewlyAdded'] ?? DEFAULT_VALUES.showNewlyAdded));
+	promises.push(stateManager.store('excludeBookTypeLibrary', data['excludeBookTypeLibrary'] ?? DEFAULT_VALUES.excludeBookTypeLibrary));
+	promises.push(stateManager.store('enableRecursiveSearch', data['enableRecursiveSearch'] ?? DEFAULT_VALUES.enableRecursiveSearch));
+	promises.push(stateManager.store('displayReadInstedOfUnread', data['displayReadInstedOfUnread'] ?? DEFAULT_VALUES.displayReadInstedOfUnread));
+	
+	await Promise.all(promises);
 }

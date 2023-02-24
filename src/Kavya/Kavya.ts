@@ -21,11 +21,13 @@ import {
 	KavitaRequestInterceptor,
 	getKavitaAPIUrl,
 	getOptions,
+	getSeriesDetails,
 	getServerUnavailableMangaTiles,
-	log,
-	getSeriesDetails
+	reqeustToString,
+	log
 } from './Common';
 import { searchRequest } from './Search';
+import { CacheManager } from './CacheManager';
 
 export const KavyaInfo: SourceInfo = {
 	version: '1.1.6',
@@ -46,6 +48,8 @@ export const KavyaInfo: SourceInfo = {
 
 export class Kavya extends Source {
 	stateManager = createSourceStateManager({});
+
+	cacheManager = new CacheManager();
 	interceptor = new KavitaRequestInterceptor(this.stateManager);
 	
 	requestManager = createRequestManager({
@@ -156,7 +160,7 @@ export class Kavya extends Source {
 		// rome-ignore lint/suspicious/noExplicitAny: <explanation>
 		metadata: any
 	): Promise<PagedResults> {
-		return await searchRequest(searchQuery, metadata, this.requestManager, this.interceptor, this.stateManager);
+		return await searchRequest(searchQuery, metadata, this.requestManager, this.interceptor, this.stateManager, this.cacheManager);
 	}
 
 	override async getSearchTags(): Promise<TagSection[]> {
@@ -252,6 +256,7 @@ export class Kavya extends Source {
 		// the homepage when server settings are not set
 		const kavitaAPIUrl = await getKavitaAPIUrl(this.stateManager);
 		const {showOnDeck, showRecentlyUpdated, showNewlyAdded, excludeBookTypeLibrary} = await getOptions(this.stateManager);
+		const pageSize = (await getOptions(this.stateManager)).pageSize / 2;
 
 		// The source define two homepage sections: new and latest
 		const sections = [];
@@ -338,10 +343,11 @@ export class Kavya extends Source {
 			promises.push(
 				this.requestManager.schedule(request, 1).then((response) => {
 					let result = JSON.parse(response.data);
+					this.cacheManager.setCachedData(reqeustToString(request), result);
 
 					const tiles: MangaTile[] = [];
 					
-					for (const series of result) {
+					for (const series of result.slice(0, pageSize)) {
 						if (excludeBookTypeLibrary && excludeLibraryIds.includes(series.libraryId)) {
 							continue;
 						}
@@ -369,6 +375,8 @@ export class Kavya extends Source {
 		metadata: any
 	): Promise<PagedResults> {
 		const kavitaAPIUrl = await getKavitaAPIUrl(this.stateManager);
+		const {pageSize} = await getOptions(this.stateManager);
+		const page: number = metadata?.page ?? 0;
 
 		// rome-ignore lint/suspicious/noExplicitAny: <explanation>
 		// rome-ignore lint/style/useSingleVarDeclarator: <explanation>
@@ -393,15 +401,23 @@ export class Kavya extends Source {
 		const request = createRequestObject({
 			url: apiPath,
 			data: JSON.stringify(body),
-			method: 'POST',
+			method: 'POST'
 		});
 
-		const response = await this.requestManager.schedule(request, 1);
-		const result = JSON.parse(response.data);
+		// rome-ignore lint/suspicious/noExplicitAny: <explanation>
+		let result: any;
+		if (this.cacheManager.getCachedData(reqeustToString(request)) !== undefined) {
+			result = this.cacheManager.getCachedData(reqeustToString(request));
+		} else {
+			const response = await this.requestManager.schedule(request, 1);
+			result = JSON.parse(response.data);
+
+			this.cacheManager.setCachedData(reqeustToString(request), result);
+		}
 
 		const tiles: MangaTile[] = [];
 		
-		for (const series of result) {
+		for (const series of result.slice(page * pageSize, (page + 1) * pageSize)) {
 			tiles.push(createMangaTile({
 				id: `${series[id]}`,
 				title: createIconText({text: series[title]}),
@@ -409,8 +425,11 @@ export class Kavya extends Source {
 			}));
 		}
 
+		metadata = tiles.length === 0 ? undefined : { page: page + 1 };
+
 		return createPagedResults({
-			results: tiles
+			results: tiles,
+			metadata: metadata
 		});
 	}
 }
