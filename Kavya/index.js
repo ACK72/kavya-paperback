@@ -581,7 +581,7 @@ const sortHelper = (a, b) => {
     return a.volume - b.volume;
 };
 exports.KavyaInfo = {
-    version: '1.2.2',
+    version: '1.2.3',
     name: 'Kavya',
     icon: 'icon.png',
     author: 'ACK72',
@@ -634,39 +634,38 @@ class Kavya extends paperback_extensions_common_1.Source {
         // rome-ignore lint/style/useSingleVarDeclarator: <explanation>
         const chapters = [], specials = [];
         let i = 0;
+        let j = 1;
         for (const volume of result) {
             for (const chapter of volume.chapters) {
-                const name = (chapter.number === chapter.range ? '' : chapter.range.replace(`${chapter.number}-`, '')) + (chapter.titleName === '' ? '' : ` - ${chapter.titleName}`);
+                const name = chapter.number === chapter.range ? chapter.titleName || '' : `${chapter.range.replace(`${chapter.number}-`, '')}${chapter.titleName ? ` - ${chapter.titleName}` : ''}`;
                 const title = chapter.range.endsWith('.epub') ? chapter.range.slice(0, -5) : chapter.range.slice(0, -4);
-                const progress = displayReadInstedOfUnread ? (chapter.pagesRead === 0 ? '' : chapter.pages === chapter.pagesRead ? 'Read' : `Reading ${chapter.pagesRead}/${chapter.pages}`)
-                    : (chapter.pagesRead === 0 ? 'Unread' : chapter.pages === chapter.pagesRead ? '' : `Reading ${chapter.pagesRead}/${chapter.pages}`);
+                const progress = displayReadInstedOfUnread ? (chapter.pagesRead === 0 ? '' : chapter.pages === chapter.pagesRead ? '· Read' : `· Reading ${chapter.pagesRead} page`)
+                    : (chapter.pagesRead === 0 ? '· Unread' : chapter.pages === chapter.pagesRead ? '' : `· Reading ${chapter.pagesRead} page`);
                 // rome-ignore lint/suspicious/noExplicitAny: <explanation>
                 const item = {
                     id: `${chapter.id}`,
                     mangaId: mangaId,
-                    chapNum: parseInt(chapter.number),
+                    chapNum: chapter.isSpecial ? j++ : parseInt(chapter.number),
                     name: chapter.isSpecial ? title : name,
                     time: new Date(chapter.releaseDate === '0001-01-01T00:00:00' ? chapter.lastModified : chapter.releaseDate),
                     volume: volume.number,
-                    _index: i++
+                    group: `${(chapter.isSpecial ? 'Specials · ' : '')}${chapter.pages} pages ${progress}`,
+                    _index: i++,
+                    // sortIndex is unused, as it seems to have an issue when changing the sort order
                 };
-                if (chapter.isSpecial) {
-                    item.group = `Specials   ${progress}`;
+                if (chapter.isSpecial)
                     specials.push(item);
-                }
-                else {
-                    item.group = `${progress}`;
+                else
                     chapters.push(item);
-                }
             }
         }
         chapters.sort(sortHelper);
         return chapters.concat(specials).map((item, index) => {
             const chapter = createChapter({
                 ...item,
-                chapNum: index
+                chapNum: index // paperback sorts by chapNum when chapter is created, so we need to set it as index
             });
-            chapter.chapNum = item.chapNum;
+            chapter.chapNum = item.chapNum; // revert to the original chapNum, to display it correctly
             return chapter;
         });
     }
