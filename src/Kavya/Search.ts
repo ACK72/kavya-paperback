@@ -50,7 +50,7 @@ export async function searchRequest(
 	}
 	
 	const kavitaAPIUrl = await getKavitaAPIUrl(stateManager);
-	const {enableRecursiveSearch, excludeBookTypeLibrary, pageSize} = await getOptions(stateManager);
+	const { enableRecursiveSearch, excludeBookTypeLibrary, pageSize } = await getOptions(stateManager);
 	const page: number = metadata?.page ?? 0;
 
 	const excludeLibraryIds: number[] = [];

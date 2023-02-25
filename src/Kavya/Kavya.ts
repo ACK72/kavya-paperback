@@ -96,31 +96,29 @@ export class Kavya extends Source {
 		const chapters: any[] = [], specials: any[] = [];
 
 		let i = 0;
+		let j = 1;
 		for (const volume of result) {
 			for (const chapter of volume.chapters) {
-				const name: string = (chapter.number === chapter.range ? '' : chapter.range.replace(`${chapter.number}-`, '')) + (chapter.titleName === '' ? '' : ` - ${chapter.titleName}`);
+				const name = chapter.number === chapter.range ? chapter.titleName || '' : `${chapter.range.replace(`${chapter.number}-`, '')}${chapter.titleName ? ` - ${chapter.titleName}` : ''}`;
 				const title: string = chapter.range.endsWith('.epub') ? chapter.range.slice(0, -5) : chapter.range.slice(0, -4);
-				const progress: string = displayReadInstedOfUnread ? (chapter.pagesRead === 0 ? '' : chapter.pages === chapter.pagesRead ? 'Read' : `Reading ${chapter.pagesRead}/${chapter.pages}`)
-					: (chapter.pagesRead === 0 ? 'Unread' : chapter.pages === chapter.pagesRead ? '' : `Reading ${chapter.pagesRead}/${chapter.pages}`);
+				const progress: string = displayReadInstedOfUnread ? (chapter.pagesRead === 0 ? '' : chapter.pages === chapter.pagesRead ? '· Read' : `· Reading ${chapter.pagesRead} page`)
+					: (chapter.pagesRead === 0 ? '· Unread' : chapter.pages === chapter.pagesRead ? '' : `· Reading ${chapter.pagesRead} page`);
 				
 				// rome-ignore lint/suspicious/noExplicitAny: <explanation>
 				const item: any = {
 					id: `${chapter.id}`,
 					mangaId: mangaId,
-					chapNum: parseInt(chapter.number),
+					chapNum: chapter.isSpecial ? j++ : parseInt(chapter.number), // chapter.number is 0 when it's a special
 					name: chapter.isSpecial ? title : name,
 					time: new Date(chapter.releaseDate === '0001-01-01T00:00:00' ? chapter.lastModified : chapter.releaseDate),
 					volume: volume.number,
-					_index: i++
+					group: `${(chapter.isSpecial ? 'Specials · ' : '')}${chapter.pages} pages ${progress}`,
+					_index: i++,
+					// sortIndex is unused, as it seems to have an issue when changing the sort order
 				};
 				
-				if (chapter.isSpecial) {
-					item.group = `Specials   ${progress}`;
-					specials.push(item);
-				} else {
-					item.group = `${progress}`;
-					chapters.push(item);
-				}
+				if (chapter.isSpecial) specials.push(item);
+				else chapters.push(item);
 			}
 		}
 
@@ -128,10 +126,10 @@ export class Kavya extends Source {
 		return chapters.concat(specials).map((item, index) => {
 			const chapter = createChapter({
 				...item,
-				chapNum: index
+				chapNum: index // paperback sorts by chapNum when chapter is created, so we need to set it as index
 			});
 
-			chapter.chapNum = item.chapNum;
+			chapter.chapNum = item.chapNum; // revert to the original chapNum, to display it correctly
 			return chapter;
 		});
 	}
@@ -180,7 +178,7 @@ export class Kavya extends Source {
 		}
 
 		const kavitaAPIUrl = await getKavitaAPIUrl(this.stateManager);
-		const {excludeBookTypeLibrary} = await getOptions(this.stateManager);
+		const { excludeBookTypeLibrary } = await getOptions(this.stateManager);
 
 		const includeLibraryIds: string[] = [];
 
@@ -264,7 +262,7 @@ export class Kavya extends Source {
 		// We won't use `await this.getKavitaAPIUrl()` as we do not want to throw an error on
 		// the homepage when server settings are not set
 		const kavitaAPIUrl = await getKavitaAPIUrl(this.stateManager);
-		const {showOnDeck, showRecentlyUpdated, showNewlyAdded, excludeBookTypeLibrary} = await getOptions(this.stateManager);
+		const { showOnDeck, showRecentlyUpdated, showNewlyAdded, excludeBookTypeLibrary } = await getOptions(this.stateManager);
 		const pageSize = (await getOptions(this.stateManager)).pageSize / 2;
 
 		// The source define two homepage sections: new and latest
@@ -384,7 +382,7 @@ export class Kavya extends Source {
 		metadata: any
 	): Promise<PagedResults> {
 		const kavitaAPIUrl = await getKavitaAPIUrl(this.stateManager);
-		const {pageSize} = await getOptions(this.stateManager);
+		const { pageSize } = await getOptions(this.stateManager);
 		const page: number = metadata?.page ?? 0;
 
 		// rome-ignore lint/suspicious/noExplicitAny: <explanation>
