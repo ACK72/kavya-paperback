@@ -49,8 +49,17 @@ export class KavitaRequestInterceptor implements RequestInterceptor {
 
 	async interceptRequest(request: Request): Promise<Request> {
 		request.headers = {
-			'Authorization': this.authorization,
-			'Content-Type': typeof request.data === 'string' ? 'application/json' : 'text/html'
+			...request.headers,
+			...(typeof request.data === 'string' ? { 'Content-Type': 'application/json' } : {}),
+
+			'Authorization': this.authorization
+		}
+
+		if (request.url.startsWith('IMAGE*')) {
+			// request.url = request.url.replace('IMAGE*', '').replace(/(?<=\/image)(.*)(?=\?chapterId=)/gm, '');
+
+			request.url = request.url.split('*').pop() ?? '';
+			request.url = `${request.url.split('/image')[0]}/image?chapterId=${request.url.split('?chapterId=')[1]}`;
 		}
 
 		return request;

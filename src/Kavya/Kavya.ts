@@ -153,7 +153,7 @@ export class Kavya extends Source {
 
 		const pages: string[] = [];
 		for (let i = 0;i < result.pages;i++) {
-			pages.push(`${kavitaAPIUrl}/Reader/image?chapterId=${chapterId}&page=${i}&extractPdf=true`);
+			pages.push(`IMAGE*${kavitaAPIUrl}/Reader/image/${i}?chapterId=${chapterId}&page=${i}&extractPdf=true`);
 		}
 
 		return createChapterDetails({
