@@ -427,9 +427,15 @@ class KavitaRequestInterceptor {
     }
     async interceptRequest(request) {
         request.headers = {
-            'Authorization': this.authorization,
-            'Content-Type': typeof request.data === 'string' ? 'application/json' : 'text/html'
+            ...request.headers,
+            ...(typeof request.data === 'string' ? { 'Content-Type': 'application/json' } : {}),
+            'Authorization': this.authorization
         };
+        if (request.url.startsWith('IMAGE*')) {
+            // request.url = request.url.replace('IMAGE*', '').replace(/(?<=\/image)(.*)(?=\?chapterId=)/gm, '');
+            request.url = request.url.split('*').pop() ?? '';
+            request.url = `${request.url.split('/image')[0]}/image?chapterId=${request.url.split('?chapterId=')[1]}`;
+        }
         return request;
     }
 }
@@ -581,7 +587,7 @@ const sortHelper = (a, b) => {
     return a.volume - b.volume;
 };
 exports.KavyaInfo = {
-    version: '1.2.4',
+    version: '1.2.5',
     name: 'Kavya',
     icon: 'icon.png',
     author: 'ACK72',
@@ -682,7 +688,7 @@ class Kavya extends paperback_extensions_common_1.Source {
         const result = typeof response.data === 'string' ? JSON.parse(response.data) : response.data;
         const pages = [];
         for (let i = 0; i < result.pages; i++) {
-            pages.push(`${kavitaAPIUrl}/Reader/image?chapterId=${chapterId}&page=${i}&extractPdf=true`);
+            pages.push(`IMAGE*${kavitaAPIUrl}/Reader/image/${i}?chapterId=${chapterId}&page=${i}&extractPdf=true`);
         }
         return createChapterDetails({
             id: chapterId,
