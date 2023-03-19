@@ -1,7 +1,7 @@
 {
 	"name": "extensions-main",
 	"repositoryName": "ACK72's Extensions",
-	"version": "1.2.4",
+	"version": "1.2.5",
 	"description": "ACK72's Paperback extension repository",
 	"main": "index.js",
 	"scripts": {
