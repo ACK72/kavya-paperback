@@ -47,7 +47,7 @@ export class KavitaRequestInterceptor implements RequestInterceptor {
 		return response;
 	}
 
-	async interceptRequest(request: Request): Promise<Request> {		
+	async interceptRequest(request: Request): Promise<Request> {
 		request.headers = {
 			'Authorization': this.authorization,
 			'Content-Type': typeof request.data === 'string' ? 'application/json' : 'text/html'
@@ -113,7 +113,7 @@ export async function getSeriesDetails(mangaId: string, requestManager: RequestM
 		}));
 	}
 
-	return createManga({
+	return {
 		id: mangaId,
 		titles: [seriesResult.name],
 		image: `${kavitaAPIUrl}/image/series-cover?seriesId=${mangaId}`,
@@ -124,7 +124,7 @@ export async function getSeriesDetails(mangaId: string, requestManager: RequestM
 		desc: metadataResult.summary.replace(/<[^>]+>/g, ''),
 		tags: tagSections,
 		lastUpdate: new Date(seriesResult.lastChapterAdded)
-	});
+	};
 }
 
 export function reqeustToString(request: Request): string {
@@ -143,7 +143,7 @@ export function searchRequestToString(searchQuery: SearchRequest): string {
 }
 
 
-// 
+//
 // Kavya Setting State Methods
 //
 // rome-ignore lint/suspicious/noExplicitAny: <explanation>
@@ -155,7 +155,7 @@ export const DEFAULT_VALUES: any = {
 	showOnDeck: true,
 	showRecentlyUpdated: true,
 	showNewlyAdded: true,
-	excludeBookTypeLibrary: false, 
+	excludeBookTypeLibrary: false,
 	enableRecursiveSearch: false,
 	displayReadInstedOfUnread: true,
 	pageSize: 40

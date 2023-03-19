@@ -75,7 +75,9 @@ export class Kavya extends Source {
 	}
 
 	async getMangaDetails(mangaId: string): Promise<Manga> {
-		return await getSeriesDetails(mangaId, this.requestManager, this.stateManager);
+		return createManga({
+			...(await getSeriesDetails(mangaId, this.requestManager, this.stateManager))
+		});
 	}
 
 	async getChapters(mangaId: string): Promise<Chapter[]> {
