@@ -383,7 +383,7 @@ class CacheManager {
     getCachedData(str) {
         const time = new Date();
         const key = this.getHash(str);
-        this.cachedData = Object.fromEntries(Object.entries(this.cachedData).filter(([key, value]) => 0 < (time.getTime() - value.time.getTime()) && (time.getTime() - value.time.getTime()) < 180 * 1000));
+        this.cachedData = Object.fromEntries(Object.entries(this.cachedData).filter(([_, value]) => 0 < (time.getTime() - value.time.getTime()) && (time.getTime() - value.time.getTime()) < 180 * 1000));
         return this.cachedData[key]?.data;
     }
     // rome-ignore lint/suspicious/noExplicitAny: <explanation>
@@ -480,7 +480,7 @@ async function getSeriesDetails(mangaId, requestManager, stateManager) {
             tags: tags
         }));
     }
-    return createManga({
+    return {
         id: mangaId,
         titles: [seriesResult.name],
         image: `${kavitaAPIUrl}/image/series-cover?seriesId=${mangaId}`,
@@ -491,7 +491,7 @@ async function getSeriesDetails(mangaId, requestManager, stateManager) {
         desc: metadataResult.summary.replace(/<[^>]+>/g, ''),
         tags: tagSections,
         lastUpdate: new Date(seriesResult.lastChapterAdded)
-    });
+    };
 }
 exports.getSeriesDetails = getSeriesDetails;
 function reqeustToString(request) {
@@ -509,7 +509,7 @@ function searchRequestToString(searchQuery) {
     });
 }
 exports.searchRequestToString = searchRequestToString;
-// 
+//
 // Kavya Setting State Methods
 //
 // rome-ignore lint/suspicious/noExplicitAny: <explanation>
@@ -581,7 +581,7 @@ const sortHelper = (a, b) => {
     return a.volume - b.volume;
 };
 exports.KavyaInfo = {
-    version: '1.2.3',
+    version: '1.2.4',
     name: 'Kavya',
     icon: 'icon.png',
     author: 'ACK72',
@@ -618,7 +618,9 @@ class Kavya extends paperback_extensions_common_1.Source {
         });
     }
     async getMangaDetails(mangaId) {
-        return await (0, Common_1.getSeriesDetails)(mangaId, this.requestManager, this.stateManager);
+        return createManga({
+            ...(await (0, Common_1.getSeriesDetails)(mangaId, this.requestManager, this.stateManager))
+        });
     }
     async getChapters(mangaId) {
         const kavitaAPIUrl = await (0, Common_1.getKavitaAPIUrl)(this.stateManager);
