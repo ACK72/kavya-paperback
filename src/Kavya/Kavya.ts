@@ -110,7 +110,7 @@ export class Kavya extends Source {
 				const item: any = {
 					id: `${chapter.id}`,
 					mangaId: mangaId,
-					chapNum: chapter.isSpecial ? j++ : parseInt(chapter.number), // chapter.number is 0 when it's a special
+					chapNum: chapter.isSpecial ? j++ : parseFloat(chapter.number), // chapter.number is 0 when it's a special
 					name: chapter.isSpecial ? title : name,
 					time: new Date(chapter.releaseDate === '0001-01-01T00:00:00' ? chapter.lastModified : chapter.releaseDate),
 					volume: volume.number,
@@ -351,7 +351,7 @@ export class Kavya extends Source {
 			// Get the section data
 			promises.push(
 				this.requestManager.schedule(request, 1).then((response) => {
-					let result = JSON.parse(response.data);
+					const result = JSON.parse(response.data);
 					this.cacheManager.setCachedData(reqeustToString(request), result);
 
 					const tiles: MangaTile[] = [];
