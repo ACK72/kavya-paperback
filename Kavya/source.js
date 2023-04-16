@@ -587,7 +587,7 @@ const sortHelper = (a, b) => {
     return a.volume - b.volume;
 };
 exports.KavyaInfo = {
-    version: '1.2.5',
+    version: '1.2.6',
     name: 'Kavya',
     icon: 'icon.png',
     author: 'ACK72',
@@ -653,7 +653,7 @@ class Kavya extends paperback_extensions_common_1.Source {
                 const item = {
                     id: `${chapter.id}`,
                     mangaId: mangaId,
-                    chapNum: chapter.isSpecial ? j++ : parseInt(chapter.number),
+                    chapNum: chapter.isSpecial ? j++ : parseFloat(chapter.number),
                     name: chapter.isSpecial ? title : name,
                     time: new Date(chapter.releaseDate === '0001-01-01T00:00:00' ? chapter.lastModified : chapter.releaseDate),
                     volume: volume.number,
@@ -846,7 +846,7 @@ class Kavya extends paperback_extensions_common_1.Source {
             });
             // Get the section data
             promises.push(this.requestManager.schedule(request, 1).then((response) => {
-                let result = JSON.parse(response.data);
+                const result = JSON.parse(response.data);
                 this.cacheManager.setCachedData((0, Common_1.reqeustToString)(request), result);
                 const tiles = [];
                 for (const series of result.slice(0, pageSize)) {
