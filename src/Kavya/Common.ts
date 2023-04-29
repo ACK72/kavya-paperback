@@ -24,11 +24,19 @@ export const KAVITA_PUBLICATION_STATUS: MangaStatus[] = [
 
 export class KavitaRequestInterceptor implements RequestInterceptor {
 	stateManager: SourceStateManager;
+	/**
+	 * JWT in form of 'Bearer TOKEN'
+	 */
 	authorization: string;
+	/**
+	 * API Key for the Plugin
+	 */
+	authApiKey: string;
 
 	constructor(stateManager: SourceStateManager) {
 		this.stateManager = stateManager;
 		this.authorization = '';
+		this.authApiKey = '';
 	}
 
 	async isServerAvailable(): Promise<boolean> {
@@ -40,7 +48,9 @@ export class KavitaRequestInterceptor implements RequestInterceptor {
 	}
 
 	async updateAuthorization(): Promise<void> {
-		this.authorization = await getAuthorizationString(this.stateManager);
+		const auth = await getAuthorizationString(this.stateManager);
+		this.authorization = auth.jwtToken != '' ? `Bearer ${auth.jwtToken}` : '';
+		this.authApiKey = auth.apiKey;
 	}
 
 	async interceptResponse(response: Response): Promise<Response> {
@@ -60,6 +70,7 @@ export class KavitaRequestInterceptor implements RequestInterceptor {
 
 			request.url = request.url.split('*').pop() ?? '';
 			request.url = `${request.url.split('/image')[0]}/image?chapterId=${request.url.split('?chapterId=')[1]}`;
+			request.url += '&apiKey=' + encodeURIComponent(this.authApiKey);
 		}
 
 		return request;
@@ -174,7 +185,7 @@ export async function getKavitaAPIUrl(stateManager: SourceStateManager): Promise
 	return (await stateManager.retrieve('kavitaAPIUrl') as string | undefined) ?? DEFAULT_VALUES.kavitaAPIUrl;
 }
 
-export async function getAuthorizationString(stateManager: SourceStateManager): Promise<string> {
+export async function getAuthorizationString(stateManager: SourceStateManager): Promise<{jwtToken: string, apiKey: string}> {
 	const apiUri = (await stateManager.retrieve('kavitaAPIUrl') as string) ?? DEFAULT_VALUES.kavitaAPIUrl;
 	const apiKey = (await stateManager.keychain.retrieve('kavitaAPIKey') as string) ?? DEFAULT_VALUES.kavitaAPIKey;
 
@@ -190,7 +201,7 @@ export async function getAuthorizationString(stateManager: SourceStateManager): 
 	const response = await manager.schedule(request, 1);
 	const token = typeof response.data === 'string' ? JSON.parse(response.data).token : undefined;
 
-	return token ? `Bearer ${token}` : '';
+	return {jwtToken: token, apiKey};
 }
 
 export async function getOptions(
