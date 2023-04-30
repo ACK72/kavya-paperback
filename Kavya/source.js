@@ -590,7 +590,7 @@ const sortHelper = (a, b) => {
     return a.volume - b.volume;
 };
 exports.KavyaInfo = {
-    version: '1.2.7',
+    version: '1.2.8',
     name: 'Kavya',
     icon: 'icon.png',
     author: 'ACK72',
@@ -682,7 +682,7 @@ class Kavya extends paperback_extensions_common_1.Source {
     }
     async getChapterDetails(mangaId, chapterId) {
         const kavitaAPIUrl = await (0, Common_1.getKavitaAPIUrl)(this.stateManager);
-        const kavitaAPIKey = await (0, Common_1.getKavitaAPIUrl)(this.stateManager);
+        const kavitaAPIKey = await (0, Common_1.getKavitaAPIKey)(this.stateManager);
         const request = createRequestObject({
             url: `${kavitaAPIUrl}/Series/chapter`,
             param: `?chapterId=${chapterId}`,
