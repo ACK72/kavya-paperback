@@ -20,6 +20,7 @@ import {
 import {
 	KavitaRequestInterceptor,
 	getKavitaAPIUrl,
+	getKavitaAPIKey,
 	getOptions,
 	getSeriesDetails,
 	getServerUnavailableMangaTiles,
@@ -141,6 +142,7 @@ export class Kavya extends Source {
 		chapterId: string
 	): Promise<ChapterDetails> {
 		const kavitaAPIUrl = await getKavitaAPIUrl(this.stateManager);
+		const kavitaAPIKey = await getKavitaAPIUrl(this.stateManager);
 
 		const request = createRequestObject({
 			url: `${kavitaAPIUrl}/Series/chapter`,
@@ -153,7 +155,7 @@ export class Kavya extends Source {
 
 		const pages: string[] = [];
 		for (let i = 0;i < result.pages;i++) {
-			pages.push(`IMAGE*${kavitaAPIUrl}/Reader/image/${i}?chapterId=${chapterId}&page=${i}&extractPdf=true`);
+			pages.push(`FAKE*/${i}?*REAL*${kavitaAPIUrl}/Reader/image?chapterId=${chapterId}&page=${i}&apiKey=${kavitaAPIKey}&extractPdf=true`);
 		}
 
 		return createChapterDetails({
@@ -264,6 +266,7 @@ export class Kavya extends Source {
 		// We won't use `await this.getKavitaAPIUrl()` as we do not want to throw an error on
 		// the homepage when server settings are not set
 		const kavitaAPIUrl = await getKavitaAPIUrl(this.stateManager);
+		const kavitaAPIKey = await getKavitaAPIKey(this.stateManager);
 		const { showOnDeck, showRecentlyUpdated, showNewlyAdded, excludeBookTypeLibrary } = await getOptions(this.stateManager);
 		const pageSize = (await getOptions(this.stateManager)).pageSize / 2;
 
@@ -364,7 +367,7 @@ export class Kavya extends Source {
 						tiles.push(createMangaTile({
 							id: `${series[id]}`,
 							title: createIconText({text: series[title]}),
-							image: `${kavitaAPIUrl}/image/series-cover?seriesId=${series[id]}`
+							image: `${kavitaAPIUrl}/image/series-cover?seriesId=${series[id]}&apiKey=${kavitaAPIKey}`,
 						}));
 					}
 					
@@ -384,6 +387,7 @@ export class Kavya extends Source {
 		metadata: any
 	): Promise<PagedResults> {
 		const kavitaAPIUrl = await getKavitaAPIUrl(this.stateManager);
+		const kavitaAPIKey = await getKavitaAPIKey(this.stateManager);
 		const { pageSize } = await getOptions(this.stateManager);
 		const page: number = metadata?.page ?? 0;
 
@@ -430,7 +434,7 @@ export class Kavya extends Source {
 			tiles.push(createMangaTile({
 				id: `${series[id]}`,
 				title: createIconText({text: series[title]}),
-				image: `${kavitaAPIUrl}/image/series-cover?seriesId=${series[id]}`
+				image: `${kavitaAPIUrl}/image/series-cover?seriesId=${series[id]}&apiKey=${kavitaAPIKey}`
 			}));
 		}
 

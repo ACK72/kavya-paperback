@@ -9,6 +9,7 @@ import { CacheManager } from "./CacheManager";
 import {
 	KavitaRequestInterceptor,
 	getKavitaAPIUrl,
+	getKavitaAPIKey,
 	getOptions,
 	getServerUnavailableMangaTiles,
 	searchRequestToString,
@@ -50,6 +51,7 @@ export async function searchRequest(
 	}
 	
 	const kavitaAPIUrl = await getKavitaAPIUrl(stateManager);
+	const kavitaAPIKey = await getKavitaAPIKey(stateManager);
 	const { enableRecursiveSearch, excludeBookTypeLibrary, pageSize } = await getOptions(stateManager);
 	const page: number = metadata?.page ?? 0;
 
@@ -102,7 +104,7 @@ export async function searchRequest(
 					createMangaTile({
 						id: `${manga.seriesId}`,
 						title: createIconText({text: manga.name}),
-						image: `${kavitaAPIUrl}/image/series-cover?seriesId=${manga.seriesId}`
+						image: `${kavitaAPIUrl}/image/series-cover?seriesId=${manga.seriesId}&apiKey=${kavitaAPIKey}`
 					})
 				);
 			}
@@ -140,7 +142,7 @@ export async function searchRequest(
 									createMangaTile({
 										id: `${manga.id}`,
 										title: createIconText({text: manga.name}),
-										image: `${kavitaAPIUrl}/image/series-cover?seriesId=${manga.id}`
+										image: `${kavitaAPIUrl}/image/series-cover?seriesId=${manga.id}&apiKey=${kavitaAPIKey}`
 									})
 								);
 							}
@@ -153,7 +155,7 @@ export async function searchRequest(
 	
 		if (typeof searchQuery.includedTags !== 'undefined') {
 			// rome-ignore lint/suspicious/noExplicitAny: <explanation>
-			let body: any = {};
+			const body: any = {};
 			const peopleTags: string[] = [];
 	
 			searchQuery.includedTags.forEach(async (tag) => {
@@ -196,7 +198,7 @@ export async function searchRequest(
 					createMangaTile({
 						id: `${manga.id}`,
 						title: createIconText({text: manga.name}),
-						image: `${kavitaAPIUrl}/image/series-cover?seriesId=${manga.id}`,
+						image: `${kavitaAPIUrl}/image/series-cover?seriesId=${manga.id}&apiKey=${kavitaAPIKey}`,
 					})
 				);
 			}

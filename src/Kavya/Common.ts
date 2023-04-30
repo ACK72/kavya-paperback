@@ -55,11 +55,8 @@ export class KavitaRequestInterceptor implements RequestInterceptor {
 			'Authorization': this.authorization
 		}
 
-		if (request.url.startsWith('IMAGE*')) {
-			// request.url = request.url.replace('IMAGE*', '').replace(/(?<=\/image)(.*)(?=\?chapterId=)/gm, '');
-
-			request.url = request.url.split('*').pop() ?? '';
-			request.url = `${request.url.split('/image')[0]}/image?chapterId=${request.url.split('?chapterId=')[1]}`;
+		if (request.url.startsWith('FAKE*')) {
+			request.url = request.url.split('*REAL*').pop() ?? '';
 		}
 
 		return request;
@@ -80,6 +77,7 @@ export function getServerUnavailableMangaTiles() {
 
 export async function getSeriesDetails(mangaId: string, requestManager: RequestManager, stateManager: SourceStateManager) {
 	const kavitaAPIUrl = await getKavitaAPIUrl(stateManager);
+	const kavitaAPIKey = await getKavitaAPIKey(stateManager);
 
 	const seriesRequest = createRequestObject({
 		url: `${kavitaAPIUrl}/Series/${mangaId}`,
@@ -125,7 +123,7 @@ export async function getSeriesDetails(mangaId: string, requestManager: RequestM
 	return {
 		id: mangaId,
 		titles: [seriesResult.name],
-		image: `${kavitaAPIUrl}/image/series-cover?seriesId=${mangaId}`,
+		image: `${kavitaAPIUrl}/image/series-cover?seriesId=${mangaId}&apiKey=${kavitaAPIKey}`,
 		rating: seriesResult.userRating,
 		status: KAVITA_PUBLICATION_STATUS[metadataResult.publicationStatus] ?? MangaStatus.UNKNOWN,
 		artist: typeof metadataResult.pencillers[0] === 'undefined' ? '' : metadataResult.pencillers[0].name,
@@ -172,6 +170,10 @@ export const DEFAULT_VALUES: any = {
 
 export async function getKavitaAPIUrl(stateManager: SourceStateManager): Promise<string> {
 	return (await stateManager.retrieve('kavitaAPIUrl') as string | undefined) ?? DEFAULT_VALUES.kavitaAPIUrl;
+}
+
+export async function getKavitaAPIKey(stateManager: SourceStateManager): Promise<string> {
+	return (await stateManager.retrieve('kavitaAPIKey') as string | undefined) ?? DEFAULT_VALUES.kavitaAPIKey;
 }
 
 export async function getAuthorizationString(stateManager: SourceStateManager): Promise<string> {
