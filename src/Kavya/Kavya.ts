@@ -142,7 +142,7 @@ export class Kavya extends Source {
 		chapterId: string
 	): Promise<ChapterDetails> {
 		const kavitaAPIUrl = await getKavitaAPIUrl(this.stateManager);
-		const kavitaAPIKey = await getKavitaAPIUrl(this.stateManager);
+		const kavitaAPIKey = await getKavitaAPIKey(this.stateManager);
 
 		const request = createRequestObject({
 			url: `${kavitaAPIUrl}/Series/chapter`,
