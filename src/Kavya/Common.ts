@@ -173,7 +173,7 @@ export async function getKavitaAPIUrl(stateManager: SourceStateManager): Promise
 }
 
 export async function getKavitaAPIKey(stateManager: SourceStateManager): Promise<string> {
-	return (await stateManager.keychain.retrieve('kavitaAPIKey') as string) ?? DEFAULT_VALUES.kavitaAPIKey;
+	return (await stateManager.keychain.retrieve('kavitaAPIKey') as string | undefined) ?? DEFAULT_VALUES.kavitaAPIKey;
 }
 
 export async function getAuthorizationString(stateManager: SourceStateManager): Promise<string> {
