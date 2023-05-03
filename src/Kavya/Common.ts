@@ -76,15 +76,14 @@ export function getServerUnavailableMangaTiles() {
 }
 
 export async function getSeriesDetails(mangaId: string, requestManager: RequestManager, stateManager: SourceStateManager) {
-	const kavitaAPIUrl = await getKavitaAPIUrl(stateManager);
-	const kavitaAPIKey = await getKavitaAPIKey(stateManager);
+	const kavitaAPI = await getKavitaAPI(stateManager);
 
 	const seriesRequest = createRequestObject({
-		url: `${kavitaAPIUrl}/Series/${mangaId}`,
+		url: `${kavitaAPI.url}/Series/${mangaId}`,
 		method: 'GET',
 	});
 	const metadataRequest = createRequestObject({
-		url: `${kavitaAPIUrl}/Series/metadata`,
+		url: `${kavitaAPI.url}/Series/metadata`,
 		param: `?seriesId=${mangaId}`,
 		method: 'GET',
 	});
@@ -123,7 +122,7 @@ export async function getSeriesDetails(mangaId: string, requestManager: RequestM
 	return {
 		id: mangaId,
 		titles: [seriesResult.name],
-		image: `${kavitaAPIUrl}/image/series-cover?seriesId=${mangaId}&apiKey=${kavitaAPIKey}`,
+		image: `${kavitaAPI.url}/image/series-cover?seriesId=${mangaId}&apiKey=${kavitaAPI.key}`,
 		rating: seriesResult.userRating,
 		status: KAVITA_PUBLICATION_STATUS[metadataResult.publicationStatus] ?? MangaStatus.UNKNOWN,
 		artist: typeof metadataResult.pencillers[0] === 'undefined' ? '' : metadataResult.pencillers[0].name,
@@ -168,26 +167,24 @@ export const DEFAULT_VALUES: any = {
 	pageSize: 40
 }
 
-export async function getKavitaAPIUrl(stateManager: SourceStateManager): Promise<string> {
-	return (await stateManager.retrieve('kavitaAPIUrl') as string | undefined) ?? DEFAULT_VALUES.kavitaAPIUrl;
-}
+export async function getKavitaAPI(stateManager: SourceStateManager): Promise<{url: string, key: string}> {
+	const kavitaAPIUrl = (await stateManager.retrieve('kavitaAPIUrl') as string | undefined) ?? DEFAULT_VALUES.kavitaAPIUrl;
+	const kavitaAPIKey = (await stateManager.keychain.retrieve('kavitaAPIKey') as string | undefined) ?? DEFAULT_VALUES.kavitaAPIKey;
 
-export async function getKavitaAPIKey(stateManager: SourceStateManager): Promise<string> {
-	return (await stateManager.retrieve('kavitaAPIKey') as string | undefined) ?? DEFAULT_VALUES.kavitaAPIKey;
+	return {url: kavitaAPIUrl, key: kavitaAPIKey};
 }
 
 export async function getAuthorizationString(stateManager: SourceStateManager): Promise<string> {
-	const apiUri = (await stateManager.retrieve('kavitaAPIUrl') as string) ?? DEFAULT_VALUES.kavitaAPIUrl;
-	const apiKey = (await stateManager.keychain.retrieve('kavitaAPIKey') as string) ?? DEFAULT_VALUES.kavitaAPIKey;
+	const kavitaAPI = await getKavitaAPI(stateManager);
 
 	const manager = createRequestManager({
 		requestsPerSecond: 4,
 		requestTimeout: 20000
 	});
 	const request = createRequestObject({
-		url: `${apiUri}/Plugin/authenticate`,
-		param: `?apiKey=${apiKey}&pluginName=Kavya`,
-		method: 'POST',
+		url: `${kavitaAPI.url}/Plugin/authenticate`,
+		param: `?apiKey=${kavitaAPI.key}&pluginName=Kavya`,
+		method: 'POST'
 	});
 	const response = await manager.schedule(request, 1);
 	const token = typeof response.data === 'string' ? JSON.parse(response.data).token : undefined;

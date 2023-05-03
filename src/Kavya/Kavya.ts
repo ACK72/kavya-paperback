@@ -19,8 +19,7 @@ import {
 } from './Settings';
 import {
 	KavitaRequestInterceptor,
-	getKavitaAPIUrl,
-	getKavitaAPIKey,
+	getKavitaAPI,
 	getOptions,
 	getSeriesDetails,
 	getServerUnavailableMangaTiles,
@@ -82,11 +81,11 @@ export class Kavya extends Source {
 	}
 
 	async getChapters(mangaId: string): Promise<Chapter[]> {
-		const kavitaAPIUrl = await getKavitaAPIUrl(this.stateManager);
+		const kavitaAPI = await getKavitaAPI(this.stateManager);
 		const { displayReadInstedOfUnread } = await getOptions(this.stateManager);
 
 		const request = createRequestObject({
-			url: `${kavitaAPIUrl}/Series/volumes`,
+			url: `${kavitaAPI.url}/Series/volumes`,
 			param: `?seriesId=${mangaId}`,
 			method: 'GET',
 		});
@@ -141,11 +140,10 @@ export class Kavya extends Source {
 		mangaId: string,
 		chapterId: string
 	): Promise<ChapterDetails> {
-		const kavitaAPIUrl = await getKavitaAPIUrl(this.stateManager);
-		const kavitaAPIKey = await getKavitaAPIKey(this.stateManager);
+		const kavitaAPI = await getKavitaAPI(this.stateManager);
 
 		const request = createRequestObject({
-			url: `${kavitaAPIUrl}/Series/chapter`,
+			url: `${kavitaAPI.url}/Series/chapter`,
 			param: `?chapterId=${chapterId}`,
 			method: 'GET',
 		});
@@ -155,7 +153,7 @@ export class Kavya extends Source {
 
 		const pages: string[] = [];
 		for (let i = 0;i < result.pages;i++) {
-			pages.push(`FAKE*/${i}?*REAL*${kavitaAPIUrl}/Reader/image?chapterId=${chapterId}&page=${i}&apiKey=${kavitaAPIKey}&extractPdf=true`);
+			pages.push(`FAKE*/${i}?*REAL*${kavitaAPI.url}/Reader/image?chapterId=${chapterId}&page=${i}&apiKey=${kavitaAPI.key}&extractPdf=true`);
 		}
 
 		return createChapterDetails({
@@ -181,13 +179,13 @@ export class Kavya extends Source {
 			return [];
 		}
 
-		const kavitaAPIUrl = await getKavitaAPIUrl(this.stateManager);
+		const kavitaAPI = await getKavitaAPI(this.stateManager);
 		const { excludeBookTypeLibrary } = await getOptions(this.stateManager);
 
 		const includeLibraryIds: string[] = [];
 
 		const libraryRequest = createRequestObject({
-			url: `${kavitaAPIUrl}/Library`,
+			url: `${kavitaAPI.url}/Library`,
 			method: 'GET',
 		});
 
@@ -207,7 +205,7 @@ export class Kavya extends Source {
 
 		for (const tagName of tagNames) {
 			const request = createRequestObject({
-				url: `${kavitaAPIUrl}/Metadata/${tagName}`,
+				url: `${kavitaAPI.url}/Metadata/${tagName}`,
 				param: `?libraryIds=${includeLibraryIds.join(',')}`,
 				method: 'GET',
 			});
@@ -263,10 +261,9 @@ export class Kavya extends Source {
 			return;
 		}
 
-		// We won't use `await this.getKavitaAPIUrl()` as we do not want to throw an error on
+		// We won't use `await this.getKavitaAPI()` as we do not want to throw an error on
 		// the homepage when server settings are not set
-		const kavitaAPIUrl = await getKavitaAPIUrl(this.stateManager);
-		const kavitaAPIKey = await getKavitaAPIKey(this.stateManager);
+		const kavitaAPI = await getKavitaAPI(this.stateManager);
 		const { showOnDeck, showRecentlyUpdated, showNewlyAdded, excludeBookTypeLibrary } = await getOptions(this.stateManager);
 		const pageSize = (await getOptions(this.stateManager)).pageSize / 2;
 
@@ -298,7 +295,7 @@ export class Kavya extends Source {
 		}
 
 		const request = createRequestObject({
-			url: `${kavitaAPIUrl}/Library`,
+			url: `${kavitaAPI.url}/Library`,
 			method: 'GET',
 		});
 
@@ -330,17 +327,17 @@ export class Kavya extends Source {
 			let apiPath: string, body: any = {}, id: string = 'id', title: string = 'name';
 			switch (section.id) {
 				case 'ondeck':
-					apiPath = `${kavitaAPIUrl}/Series/on-deck`;
+					apiPath = `${kavitaAPI.url}/Series/on-deck`;
 					break;
 				case 'recentlyupdated':
-					apiPath = `${kavitaAPIUrl}/Series/recently-updated-series`;
+					apiPath = `${kavitaAPI.url}/Series/recently-updated-series`;
 					id = 'seriesId', title = 'seriesName';
 					break;
 				case 'newlyadded':
-					apiPath = `${kavitaAPIUrl}/Series/recently-added`;
+					apiPath = `${kavitaAPI.url}/Series/recently-added`;
 					break;
 				default:
-					apiPath = `${kavitaAPIUrl}/Series/all`;
+					apiPath = `${kavitaAPI.url}/Series/all`;
 					body = {'libraries': [parseInt(section.id)]};
 					break;
 			}
@@ -367,7 +364,7 @@ export class Kavya extends Source {
 						tiles.push(createMangaTile({
 							id: `${series[id]}`,
 							title: createIconText({text: series[title]}),
-							image: `${kavitaAPIUrl}/image/series-cover?seriesId=${series[id]}&apiKey=${kavitaAPIKey}`,
+							image: `${kavitaAPI.url}/image/series-cover?seriesId=${series[id]}&apiKey=${kavitaAPI.key}`,
 						}));
 					}
 					
@@ -386,8 +383,7 @@ export class Kavya extends Source {
 		// rome-ignore lint/suspicious/noExplicitAny: <explanation>
 		metadata: any
 	): Promise<PagedResults> {
-		const kavitaAPIUrl = await getKavitaAPIUrl(this.stateManager);
-		const kavitaAPIKey = await getKavitaAPIKey(this.stateManager);
+		const kavitaAPI = await getKavitaAPI(this.stateManager);
 		const { pageSize } = await getOptions(this.stateManager);
 		const page: number = metadata?.page ?? 0;
 
@@ -396,17 +392,17 @@ export class Kavya extends Source {
 		let apiPath: string, body: any = {}, id: string = 'id', title: string = 'name';
 		switch (homepageSectionId) {
 			case 'ondeck':
-				apiPath = `${kavitaAPIUrl}/Series/on-deck`;
+				apiPath = `${kavitaAPI.url}/Series/on-deck`;
 				break;
 			case 'recentlyupdated':
-				apiPath = `${kavitaAPIUrl}/Series/recently-updated-series`;
+				apiPath = `${kavitaAPI.url}/Series/recently-updated-series`;
 				id = 'seriesId', title = 'seriesName';
 				break;
 			case 'newlyadded':
-				apiPath = `${kavitaAPIUrl}/Series/recently-added`;
+				apiPath = `${kavitaAPI.url}/Series/recently-added`;
 				break;
 			default:
-				apiPath = `${kavitaAPIUrl}/Series/all`;
+				apiPath = `${kavitaAPI.url}/Series/all`;
 				body = {'libraries': [parseInt(homepageSectionId)]};
 				break;
 		}
@@ -434,7 +430,7 @@ export class Kavya extends Source {
 			tiles.push(createMangaTile({
 				id: `${series[id]}`,
 				title: createIconText({text: series[title]}),
-				image: `${kavitaAPIUrl}/image/series-cover?seriesId=${series[id]}&apiKey=${kavitaAPIKey}`
+				image: `${kavitaAPI.url}/image/series-cover?seriesId=${series[id]}&apiKey=${kavitaAPI.key}`
 			}));
 		}
 

@@ -12,6 +12,10 @@
 		"bundle": "paperback bundle",
 		"serve": "paperback serve"
 	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/ACK72/kavya-paperback.git"
+	},
 	"author": "ACK72",
 	"license": "BSD-2-Clause",
 	"devDependencies": {

@@ -8,8 +8,7 @@ import {
 import { CacheManager } from "./CacheManager";
 import {
 	KavitaRequestInterceptor,
-	getKavitaAPIUrl,
-	getKavitaAPIKey,
+	getKavitaAPI,
 	getOptions,
 	getServerUnavailableMangaTiles,
 	searchRequestToString,
@@ -50,8 +49,7 @@ export async function searchRequest(
 		});
 	}
 	
-	const kavitaAPIUrl = await getKavitaAPIUrl(stateManager);
-	const kavitaAPIKey = await getKavitaAPIKey(stateManager);
+	const kavitaAPI = await getKavitaAPI(stateManager);
 	const { enableRecursiveSearch, excludeBookTypeLibrary, pageSize } = await getOptions(stateManager);
 	const page: number = metadata?.page ?? 0;
 
@@ -59,7 +57,7 @@ export async function searchRequest(
 
 	if (excludeBookTypeLibrary) {
 		const request = createRequestObject({
-			url: `${kavitaAPIUrl}/Library`,
+			url: `${kavitaAPI.url}/Library`,
 			method: 'GET'
 		});
 
@@ -85,7 +83,7 @@ export async function searchRequest(
 	} else {
 		if (typeof searchQuery.title === 'string' && searchQuery.title !== '') {			
 			const titleRequest = createRequestObject({
-				url: `${kavitaAPIUrl}/Search/search`,
+				url: `${kavitaAPI.url}/Search/search`,
 				param: `?queryString=${encodeURIComponent(searchQuery.title)}`,
 				method: 'GET'
 			});
@@ -104,7 +102,7 @@ export async function searchRequest(
 					createMangaTile({
 						id: `${manga.seriesId}`,
 						title: createIconText({text: manga.name}),
-						image: `${kavitaAPIUrl}/image/series-cover?seriesId=${manga.seriesId}&apiKey=${kavitaAPIKey}`
+						image: `${kavitaAPI.url}/image/series-cover?seriesId=${manga.seriesId}&apiKey=${kavitaAPI.key}`
 					})
 				);
 			}
@@ -119,14 +117,14 @@ export async function searchRequest(
 						switch (tagName) {
 							case 'persons':
 								titleTagRequest = createRequestObject({
-									url: `${kavitaAPIUrl}/Series/all`,
+									url: `${kavitaAPI.url}/Series/all`,
 									data: JSON.stringify({[KAVITA_PERSON_ROLES[item.role]]: [item.id]}),
 									method: 'POST'
 								});
 								break;
 							default:
 								titleTagRequest = createRequestObject({
-									url: `${kavitaAPIUrl}/Series/all`,
+									url: `${kavitaAPI.url}/Series/all`,
 									data: JSON.stringify({[tagName]: [item.id]}),
 									method: 'POST'
 								});
@@ -142,7 +140,7 @@ export async function searchRequest(
 									createMangaTile({
 										id: `${manga.id}`,
 										title: createIconText({text: manga.name}),
-										image: `${kavitaAPIUrl}/image/series-cover?seriesId=${manga.id}&apiKey=${kavitaAPIKey}`
+										image: `${kavitaAPI.url}/image/series-cover?seriesId=${manga.id}&apiKey=${kavitaAPI.key}`
 									})
 								);
 							}
@@ -170,7 +168,7 @@ export async function searchRequest(
 			});
 	
 			const peopleRequest = createRequestObject({
-				url: `${kavitaAPIUrl}/Metadata/people`,
+				url: `${kavitaAPI.url}/Metadata/people`,
 				method: 'GET'
 			});
 	
@@ -185,7 +183,7 @@ export async function searchRequest(
 			}
 			
 			const tagRequst = createRequestObject({
-				url: `${kavitaAPIUrl}/Series/all`,
+				url: `${kavitaAPI.url}/Series/all`,
 				data: JSON.stringify(body),
 				method: 'POST'
 			});
@@ -198,7 +196,7 @@ export async function searchRequest(
 					createMangaTile({
 						id: `${manga.id}`,
 						title: createIconText({text: manga.name}),
-						image: `${kavitaAPIUrl}/image/series-cover?seriesId=${manga.id}&apiKey=${kavitaAPIKey}`,
+						image: `${kavitaAPI.url}/image/series-cover?seriesId=${manga.id}&apiKey=${kavitaAPI.key}`,
 					})
 				);
 			}
