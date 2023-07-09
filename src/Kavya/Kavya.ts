@@ -465,6 +465,8 @@ export class Kavya implements ChapterProviding, MangaProviding, SearchResultsPro
 
 		// rome-ignore lint/suspicious/noExplicitAny: <explanation>
 		const chapters: any[] = [];
+
+		let i = 0;
 		for (const volume of result) {
 			for (const chapter of volume.chapters) {
 				// rome-ignore lint/suspicious/noExplicitAny: <explanation>
@@ -473,6 +475,7 @@ export class Kavya implements ChapterProviding, MangaProviding, SearchResultsPro
 					volume: volume.number,
 					time: new Date(chapter.lastReadingProgressUtc),
 					read: chapter.pagesRead === chapter.pages,
+					_index: i++,
 				};
 				
 				if (!chapter.isSpecial) chapters.push(item);
