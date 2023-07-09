@@ -40,10 +40,10 @@ export const serverSettingsMenu = (
 							label: "Server URL",
 							value: App.createDUIBinding({
 								async get() {
-									return values.kavitaURL;
+									return values.kavitaAddress;
 								},
 								async set(value) {
-									values.kavitaURL = value;
+									values.kavitaAddress = value;
 									await setStateData(stateManager, interceptor, values);
 								}
 							})
@@ -183,7 +183,7 @@ export const serverSettingsMenu = (
 };
 
 export async function retrieveStateData(stateManager: SourceStateManager) {
-	const kavitaURL = (await stateManager.retrieve('kavitaAddress') as string) ?? DEFAULT_VALUES.kavitaAddress;
+	const kavitaAddress = (await stateManager.retrieve('kavitaAddress') as string) ?? DEFAULT_VALUES.kavitaAddress;
 	const kavitaAPIKey = (await stateManager.keychain.retrieve('kavitaAPIKey') as string) ?? DEFAULT_VALUES.kavitaAPIKey;
 
 	const showOnDeck = (await stateManager.retrieve('showOnDeck') as boolean) ?? DEFAULT_VALUES.showOnDeck;
@@ -194,7 +194,7 @@ export async function retrieveStateData(stateManager: SourceStateManager) {
 	const displayReadInstedOfUnread = (await stateManager.retrieve('displayReadInstedOfUnread') as boolean) ?? DEFAULT_VALUES.displayReadInstedOfUnread;
 	const pageSize = (await stateManager.retrieve('pageSize') as number) ?? DEFAULT_VALUES.pageSize;
 
-	return { kavitaURL, kavitaAPIKey, showOnDeck, showRecentlyUpdated, showNewlyAdded, excludeBookTypeLibrary, enableRecursiveSearch, displayReadInstedOfUnread, pageSize }
+	return { kavitaAddress, kavitaAPIKey, showOnDeck, showRecentlyUpdated, showNewlyAdded, excludeBookTypeLibrary, enableRecursiveSearch, displayReadInstedOfUnread, pageSize }
 }
 
 // rome-ignore lint/suspicious/noExplicitAny: <explanation>
