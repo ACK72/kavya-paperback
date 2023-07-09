@@ -1,11 +1,47 @@
 (function(f){if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=f()}else if(typeof define==="function"&&define.amd){define([],f)}else{var g;if(typeof window!=="undefined"){g=window}else if(typeof global!=="undefined"){g=global}else if(typeof self!=="undefined"){g=self}else{g=this}g.Sources = f()}})(function(){var define,module,exports;return (function(){function r(e,n,t){function o(i,f){if(!n[i]){if(!e[i]){var c="function"==typeof require&&require;if(!f&&c)return c(i,!0);if(u)return u(i,!0);var a=new Error("Cannot find module '"+i+"'");throw a.code="MODULE_NOT_FOUND",a}var p=n[i]={exports:{}};e[i][0].call(p.exports,function(r){var n=e[i][1][r];return o(n||r)},p,p.exports,r,e,n,t)}return n[i].exports}for(var u="function"==typeof require&&require,i=0;i<t.length;i++)o(t[i]);return o}return r})()({1:[function(require,module,exports){
 "use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.BadgeColor = void 0;
+var BadgeColor;
+(function (BadgeColor) {
+    BadgeColor["BLUE"] = "default";
+    BadgeColor["GREEN"] = "success";
+    BadgeColor["GREY"] = "info";
+    BadgeColor["YELLOW"] = "warning";
+    BadgeColor["RED"] = "danger";
+})(BadgeColor = exports.BadgeColor || (exports.BadgeColor = {}));
+
+},{}],2:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+
+},{}],3:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.HomeSectionType = void 0;
+var HomeSectionType;
+(function (HomeSectionType) {
+    HomeSectionType["singleRowNormal"] = "singleRowNormal";
+    HomeSectionType["singleRowLarge"] = "singleRowLarge";
+    HomeSectionType["doubleRow"] = "doubleRow";
+    HomeSectionType["featured"] = "featured";
+})(HomeSectionType = exports.HomeSectionType || (exports.HomeSectionType = {}));
+
+},{}],4:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+
+},{}],5:[function(require,module,exports){
+"use strict";
 /**
  * Request objects hold information for a particular source (see sources for example)
  * This allows us to to use a generic api to make the calls against any source
  */
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.urlEncodeObject = exports.convertTime = exports.Source = void 0;
+/**
+* @deprecated Use {@link PaperbackExtensionBase}
+*/
 class Source {
     constructor(cheerio) {
         this.cheerio = cheerio;
@@ -62,225 +98,19 @@ function urlEncodeObject(obj) {
 }
 exports.urlEncodeObject = urlEncodeObject;
 
-},{}],2:[function(require,module,exports){
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.Tracker = void 0;
-class Tracker {
-    constructor(cheerio) {
-        this.cheerio = cheerio;
-    }
-}
-exports.Tracker = Tracker;
-
-},{}],3:[function(require,module,exports){
-"use strict";
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __exportStar = (this && this.__exportStar) || function(m, exports) {
-    for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-__exportStar(require("./Source"), exports);
-__exportStar(require("./Tracker"), exports);
-
-},{"./Source":1,"./Tracker":2}],4:[function(require,module,exports){
-"use strict";
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __exportStar = (this && this.__exportStar) || function(m, exports) {
-    for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-__exportStar(require("./base"), exports);
-__exportStar(require("./models"), exports);
-
-},{"./base":3,"./models":47}],5:[function(require,module,exports){
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-
 },{}],6:[function(require,module,exports){
-arguments[4][5][0].apply(exports,arguments)
-},{"dup":5}],7:[function(require,module,exports){
-arguments[4][5][0].apply(exports,arguments)
-},{"dup":5}],8:[function(require,module,exports){
-arguments[4][5][0].apply(exports,arguments)
-},{"dup":5}],9:[function(require,module,exports){
-arguments[4][5][0].apply(exports,arguments)
-},{"dup":5}],10:[function(require,module,exports){
-arguments[4][5][0].apply(exports,arguments)
-},{"dup":5}],11:[function(require,module,exports){
-arguments[4][5][0].apply(exports,arguments)
-},{"dup":5}],12:[function(require,module,exports){
-arguments[4][5][0].apply(exports,arguments)
-},{"dup":5}],13:[function(require,module,exports){
-arguments[4][5][0].apply(exports,arguments)
-},{"dup":5}],14:[function(require,module,exports){
-arguments[4][5][0].apply(exports,arguments)
-},{"dup":5}],15:[function(require,module,exports){
-arguments[4][5][0].apply(exports,arguments)
-},{"dup":5}],16:[function(require,module,exports){
-arguments[4][5][0].apply(exports,arguments)
-},{"dup":5}],17:[function(require,module,exports){
-arguments[4][5][0].apply(exports,arguments)
-},{"dup":5}],18:[function(require,module,exports){
-arguments[4][5][0].apply(exports,arguments)
-},{"dup":5}],19:[function(require,module,exports){
-arguments[4][5][0].apply(exports,arguments)
-},{"dup":5}],20:[function(require,module,exports){
-arguments[4][5][0].apply(exports,arguments)
-},{"dup":5}],21:[function(require,module,exports){
-arguments[4][5][0].apply(exports,arguments)
-},{"dup":5}],22:[function(require,module,exports){
-arguments[4][5][0].apply(exports,arguments)
-},{"dup":5}],23:[function(require,module,exports){
-"use strict";
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __exportStar = (this && this.__exportStar) || function(m, exports) {
-    for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-__exportStar(require("./Button"), exports);
-__exportStar(require("./Form"), exports);
-__exportStar(require("./Header"), exports);
-__exportStar(require("./InputField"), exports);
-__exportStar(require("./Label"), exports);
-__exportStar(require("./Link"), exports);
-__exportStar(require("./MultilineLabel"), exports);
-__exportStar(require("./NavigationButton"), exports);
-__exportStar(require("./OAuthButton"), exports);
-__exportStar(require("./Section"), exports);
-__exportStar(require("./Select"), exports);
-__exportStar(require("./Switch"), exports);
-__exportStar(require("./WebViewButton"), exports);
-__exportStar(require("./FormRow"), exports);
-__exportStar(require("./Stepper"), exports);
-
-},{"./Button":8,"./Form":9,"./FormRow":10,"./Header":11,"./InputField":12,"./Label":13,"./Link":14,"./MultilineLabel":15,"./NavigationButton":16,"./OAuthButton":17,"./Section":18,"./Select":19,"./Stepper":20,"./Switch":21,"./WebViewButton":22}],24:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.HomeSectionType = void 0;
-var HomeSectionType;
-(function (HomeSectionType) {
-    HomeSectionType["singleRowNormal"] = "singleRowNormal";
-    HomeSectionType["singleRowLarge"] = "singleRowLarge";
-    HomeSectionType["doubleRow"] = "doubleRow";
-    HomeSectionType["featured"] = "featured";
-})(HomeSectionType = exports.HomeSectionType || (exports.HomeSectionType = {}));
-
-},{}],25:[function(require,module,exports){
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.LanguageCode = void 0;
-var LanguageCode;
-(function (LanguageCode) {
-    LanguageCode["UNKNOWN"] = "_unknown";
-    LanguageCode["BENGALI"] = "bd";
-    LanguageCode["BULGARIAN"] = "bg";
-    LanguageCode["BRAZILIAN"] = "br";
-    LanguageCode["CHINEESE"] = "cn";
-    LanguageCode["CZECH"] = "cz";
-    LanguageCode["GERMAN"] = "de";
-    LanguageCode["DANISH"] = "dk";
-    LanguageCode["ENGLISH"] = "gb";
-    LanguageCode["SPANISH"] = "es";
-    LanguageCode["FINNISH"] = "fi";
-    LanguageCode["FRENCH"] = "fr";
-    LanguageCode["WELSH"] = "gb";
-    LanguageCode["GREEK"] = "gr";
-    LanguageCode["CHINEESE_HONGKONG"] = "hk";
-    LanguageCode["HUNGARIAN"] = "hu";
-    LanguageCode["INDONESIAN"] = "id";
-    LanguageCode["ISRELI"] = "il";
-    LanguageCode["INDIAN"] = "in";
-    LanguageCode["IRAN"] = "ir";
-    LanguageCode["ITALIAN"] = "it";
-    LanguageCode["JAPANESE"] = "jp";
-    LanguageCode["KOREAN"] = "kr";
-    LanguageCode["LITHUANIAN"] = "lt";
-    LanguageCode["MONGOLIAN"] = "mn";
-    LanguageCode["MEXIAN"] = "mx";
-    LanguageCode["MALAY"] = "my";
-    LanguageCode["DUTCH"] = "nl";
-    LanguageCode["NORWEGIAN"] = "no";
-    LanguageCode["PHILIPPINE"] = "ph";
-    LanguageCode["POLISH"] = "pl";
-    LanguageCode["PORTUGUESE"] = "pt";
-    LanguageCode["ROMANIAN"] = "ro";
-    LanguageCode["RUSSIAN"] = "ru";
-    LanguageCode["SANSKRIT"] = "sa";
-    LanguageCode["SAMI"] = "si";
-    LanguageCode["THAI"] = "th";
-    LanguageCode["TURKISH"] = "tr";
-    LanguageCode["UKRAINIAN"] = "ua";
-    LanguageCode["VIETNAMESE"] = "vn";
-})(LanguageCode = exports.LanguageCode || (exports.LanguageCode = {}));
-
-},{}],26:[function(require,module,exports){
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.MangaStatus = void 0;
-var MangaStatus;
-(function (MangaStatus) {
-    MangaStatus[MangaStatus["ONGOING"] = 1] = "ONGOING";
-    MangaStatus[MangaStatus["COMPLETED"] = 0] = "COMPLETED";
-    MangaStatus[MangaStatus["UNKNOWN"] = 2] = "UNKNOWN";
-    MangaStatus[MangaStatus["ABANDONED"] = 3] = "ABANDONED";
-    MangaStatus[MangaStatus["HIATUS"] = 4] = "HIATUS";
-})(MangaStatus = exports.MangaStatus || (exports.MangaStatus = {}));
-
-},{}],27:[function(require,module,exports){
-arguments[4][5][0].apply(exports,arguments)
-},{"dup":5}],28:[function(require,module,exports){
-arguments[4][5][0].apply(exports,arguments)
-},{"dup":5}],29:[function(require,module,exports){
-arguments[4][5][0].apply(exports,arguments)
-},{"dup":5}],30:[function(require,module,exports){
-arguments[4][5][0].apply(exports,arguments)
-},{"dup":5}],31:[function(require,module,exports){
-arguments[4][5][0].apply(exports,arguments)
-},{"dup":5}],32:[function(require,module,exports){
-arguments[4][5][0].apply(exports,arguments)
-},{"dup":5}],33:[function(require,module,exports){
-arguments[4][5][0].apply(exports,arguments)
-},{"dup":5}],34:[function(require,module,exports){
-arguments[4][5][0].apply(exports,arguments)
-},{"dup":5}],35:[function(require,module,exports){
-arguments[4][5][0].apply(exports,arguments)
-},{"dup":5}],36:[function(require,module,exports){
-arguments[4][5][0].apply(exports,arguments)
-},{"dup":5}],37:[function(require,module,exports){
-arguments[4][5][0].apply(exports,arguments)
-},{"dup":5}],38:[function(require,module,exports){
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.SearchOperator = void 0;
-var SearchOperator;
-(function (SearchOperator) {
-    SearchOperator["AND"] = "AND";
-    SearchOperator["OR"] = "OR";
-})(SearchOperator = exports.SearchOperator || (exports.SearchOperator = {}));
-
-},{}],39:[function(require,module,exports){
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.ContentRating = void 0;
+exports.ContentRating = exports.SourceIntents = void 0;
+var SourceIntents;
+(function (SourceIntents) {
+    SourceIntents[SourceIntents["MANGA_CHAPTERS"] = 1] = "MANGA_CHAPTERS";
+    SourceIntents[SourceIntents["MANGA_TRACKING"] = 2] = "MANGA_TRACKING";
+    SourceIntents[SourceIntents["HOMEPAGE_SECTIONS"] = 4] = "HOMEPAGE_SECTIONS";
+    SourceIntents[SourceIntents["COLLECTION_MANAGEMENT"] = 8] = "COLLECTION_MANAGEMENT";
+    SourceIntents[SourceIntents["CLOUDFLARE_BYPASS_REQUIRED"] = 16] = "CLOUDFLARE_BYPASS_REQUIRED";
+    SourceIntents[SourceIntents["SETTINGS_UI"] = 32] = "SETTINGS_UI";
+})(SourceIntents = exports.SourceIntents || (exports.SourceIntents = {}));
 /**
  * A content rating to be attributed to each source.
  */
@@ -291,41 +121,15 @@ var ContentRating;
     ContentRating["ADULT"] = "ADULT";
 })(ContentRating = exports.ContentRating || (exports.ContentRating = {}));
 
-},{}],40:[function(require,module,exports){
-arguments[4][5][0].apply(exports,arguments)
-},{"dup":5}],41:[function(require,module,exports){
-arguments[4][5][0].apply(exports,arguments)
-},{"dup":5}],42:[function(require,module,exports){
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.TagType = void 0;
-/**
- * An enumerator which {@link SourceTags} uses to define the color of the tag rendered on the website.
- * Five types are available: blue, green, grey, yellow and red, the default one is blue.
- * Common colors are red for (Broken), yellow for (+18), grey for (Country-Proof)
- */
-var TagType;
-(function (TagType) {
-    TagType["BLUE"] = "default";
-    TagType["GREEN"] = "success";
-    TagType["GREY"] = "info";
-    TagType["YELLOW"] = "warning";
-    TagType["RED"] = "danger";
-})(TagType = exports.TagType || (exports.TagType = {}));
-
-},{}],43:[function(require,module,exports){
-arguments[4][5][0].apply(exports,arguments)
-},{"dup":5}],44:[function(require,module,exports){
-arguments[4][5][0].apply(exports,arguments)
-},{"dup":5}],45:[function(require,module,exports){
-arguments[4][5][0].apply(exports,arguments)
-},{"dup":5}],46:[function(require,module,exports){
-arguments[4][5][0].apply(exports,arguments)
-},{"dup":5}],47:[function(require,module,exports){
+},{}],7:[function(require,module,exports){
 "use strict";
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
 }) : (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     o[k2] = m[k];
@@ -334,35 +138,326 @@ var __exportStar = (this && this.__exportStar) || function(m, exports) {
     for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-__exportStar(require("./Chapter"), exports);
-__exportStar(require("./HomeSection"), exports);
-__exportStar(require("./DynamicUI"), exports);
-__exportStar(require("./ChapterDetails"), exports);
-__exportStar(require("./Manga"), exports);
-__exportStar(require("./MangaTile"), exports);
-__exportStar(require("./RequestObject"), exports);
-__exportStar(require("./SearchRequest"), exports);
-__exportStar(require("./TagSection"), exports);
-__exportStar(require("./SourceTag"), exports);
-__exportStar(require("./Languages"), exports);
-__exportStar(require("./Constants"), exports);
-__exportStar(require("./MangaUpdate"), exports);
-__exportStar(require("./PagedResults"), exports);
-__exportStar(require("./ResponseObject"), exports);
-__exportStar(require("./RequestManager"), exports);
-__exportStar(require("./RequestHeaders"), exports);
+__exportStar(require("./Source"), exports);
+__exportStar(require("./ByteArray"), exports);
+__exportStar(require("./Badge"), exports);
+__exportStar(require("./interfaces"), exports);
 __exportStar(require("./SourceInfo"), exports);
-__exportStar(require("./SourceStateManager"), exports);
-__exportStar(require("./RequestInterceptor"), exports);
-__exportStar(require("./TrackedManga"), exports);
-__exportStar(require("./SourceManga"), exports);
-__exportStar(require("./TrackedMangaChapterReadAction"), exports);
-__exportStar(require("./TrackerActionQueue"), exports);
-__exportStar(require("./SearchField"), exports);
-__exportStar(require("./RawData"), exports);
-__exportStar(require("./SearchFilter"), exports);
+__exportStar(require("./HomeSectionType"), exports);
+__exportStar(require("./PaperbackExtensionBase"), exports);
 
-},{"./Chapter":5,"./ChapterDetails":6,"./Constants":7,"./DynamicUI":23,"./HomeSection":24,"./Languages":25,"./Manga":26,"./MangaTile":27,"./MangaUpdate":28,"./PagedResults":29,"./RawData":30,"./RequestHeaders":31,"./RequestInterceptor":32,"./RequestManager":33,"./RequestObject":34,"./ResponseObject":35,"./SearchField":36,"./SearchFilter":37,"./SearchRequest":38,"./SourceInfo":39,"./SourceManga":40,"./SourceStateManager":41,"./SourceTag":42,"./TagSection":43,"./TrackedManga":44,"./TrackedMangaChapterReadAction":45,"./TrackerActionQueue":46}],48:[function(require,module,exports){
+},{"./Badge":1,"./ByteArray":2,"./HomeSectionType":3,"./PaperbackExtensionBase":4,"./Source":5,"./SourceInfo":6,"./interfaces":15}],8:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+
+},{}],9:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+
+},{}],10:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+
+},{}],11:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+
+},{}],12:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+
+},{}],13:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+
+},{}],14:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+
+},{}],15:[function(require,module,exports){
+"use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __exportStar = (this && this.__exportStar) || function(m, exports) {
+    for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+__exportStar(require("./ChapterProviding"), exports);
+__exportStar(require("./CloudflareBypassRequestProviding"), exports);
+__exportStar(require("./HomePageSectionsProviding"), exports);
+__exportStar(require("./MangaProgressProviding"), exports);
+__exportStar(require("./MangaProviding"), exports);
+__exportStar(require("./RequestManagerProviding"), exports);
+__exportStar(require("./SearchResultsProviding"), exports);
+
+},{"./ChapterProviding":8,"./CloudflareBypassRequestProviding":9,"./HomePageSectionsProviding":10,"./MangaProgressProviding":11,"./MangaProviding":12,"./RequestManagerProviding":13,"./SearchResultsProviding":14}],16:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+
+},{}],17:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+
+},{}],18:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+
+},{}],19:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+
+},{}],20:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+
+},{}],21:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+
+},{}],22:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+
+},{}],23:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+
+},{}],24:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+
+},{}],25:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+
+},{}],26:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+
+},{}],27:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+
+},{}],28:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+
+},{}],29:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+
+},{}],30:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+
+},{}],31:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+
+},{}],32:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+
+},{}],33:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+
+},{}],34:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+
+},{}],35:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+
+},{}],36:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+
+},{}],37:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+
+},{}],38:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+
+},{}],39:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+
+},{}],40:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+
+},{}],41:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+
+},{}],42:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+
+},{}],43:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+
+},{}],44:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+
+},{}],45:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+
+},{}],46:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+
+},{}],47:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+
+},{}],48:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+
+},{}],49:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+
+},{}],50:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+
+},{}],51:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+
+},{}],52:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+
+},{}],53:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+
+},{}],54:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+
+},{}],55:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+
+},{}],56:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+
+},{}],57:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+
+},{}],58:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+
+},{}],59:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+
+},{}],60:[function(require,module,exports){
+"use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __exportStar = (this && this.__exportStar) || function(m, exports) {
+    for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+__exportStar(require("./DynamicUI/Exports/DUIBinding"), exports);
+__exportStar(require("./DynamicUI/Exports/DUIForm"), exports);
+__exportStar(require("./DynamicUI/Exports/DUIFormRow"), exports);
+__exportStar(require("./DynamicUI/Exports/DUISection"), exports);
+__exportStar(require("./DynamicUI/Rows/Exports/DUIButton"), exports);
+__exportStar(require("./DynamicUI/Rows/Exports/DUIHeader"), exports);
+__exportStar(require("./DynamicUI/Rows/Exports/DUIInputField"), exports);
+__exportStar(require("./DynamicUI/Rows/Exports/DUILabel"), exports);
+__exportStar(require("./DynamicUI/Rows/Exports/DUILink"), exports);
+__exportStar(require("./DynamicUI/Rows/Exports/DUIMultilineLabel"), exports);
+__exportStar(require("./DynamicUI/Rows/Exports/DUINavigationButton"), exports);
+__exportStar(require("./DynamicUI/Rows/Exports/DUIOAuthButton"), exports);
+__exportStar(require("./DynamicUI/Rows/Exports/DUISecureInputField"), exports);
+__exportStar(require("./DynamicUI/Rows/Exports/DUISelect"), exports);
+__exportStar(require("./DynamicUI/Rows/Exports/DUIStepper"), exports);
+__exportStar(require("./DynamicUI/Rows/Exports/DUISwitch"), exports);
+__exportStar(require("./Exports/ChapterDetails"), exports);
+__exportStar(require("./Exports/Chapter"), exports);
+__exportStar(require("./Exports/Cookie"), exports);
+__exportStar(require("./Exports/HomeSection"), exports);
+__exportStar(require("./Exports/IconText"), exports);
+__exportStar(require("./Exports/MangaInfo"), exports);
+__exportStar(require("./Exports/MangaProgress"), exports);
+__exportStar(require("./Exports/PartialSourceManga"), exports);
+__exportStar(require("./Exports/MangaUpdates"), exports);
+__exportStar(require("./Exports/PBCanvas"), exports);
+__exportStar(require("./Exports/PBImage"), exports);
+__exportStar(require("./Exports/PagedResults"), exports);
+__exportStar(require("./Exports/RawData"), exports);
+__exportStar(require("./Exports/Request"), exports);
+__exportStar(require("./Exports/SourceInterceptor"), exports);
+__exportStar(require("./Exports/RequestManager"), exports);
+__exportStar(require("./Exports/Response"), exports);
+__exportStar(require("./Exports/SearchField"), exports);
+__exportStar(require("./Exports/SearchRequest"), exports);
+__exportStar(require("./Exports/SourceCookieStore"), exports);
+__exportStar(require("./Exports/SourceManga"), exports);
+__exportStar(require("./Exports/SecureStateManager"), exports);
+__exportStar(require("./Exports/SourceStateManager"), exports);
+__exportStar(require("./Exports/Tag"), exports);
+__exportStar(require("./Exports/TagSection"), exports);
+__exportStar(require("./Exports/TrackedMangaChapterReadAction"), exports);
+__exportStar(require("./Exports/TrackerActionQueue"), exports);
+
+},{"./DynamicUI/Exports/DUIBinding":17,"./DynamicUI/Exports/DUIForm":18,"./DynamicUI/Exports/DUIFormRow":19,"./DynamicUI/Exports/DUISection":20,"./DynamicUI/Rows/Exports/DUIButton":21,"./DynamicUI/Rows/Exports/DUIHeader":22,"./DynamicUI/Rows/Exports/DUIInputField":23,"./DynamicUI/Rows/Exports/DUILabel":24,"./DynamicUI/Rows/Exports/DUILink":25,"./DynamicUI/Rows/Exports/DUIMultilineLabel":26,"./DynamicUI/Rows/Exports/DUINavigationButton":27,"./DynamicUI/Rows/Exports/DUIOAuthButton":28,"./DynamicUI/Rows/Exports/DUISecureInputField":29,"./DynamicUI/Rows/Exports/DUISelect":30,"./DynamicUI/Rows/Exports/DUIStepper":31,"./DynamicUI/Rows/Exports/DUISwitch":32,"./Exports/Chapter":33,"./Exports/ChapterDetails":34,"./Exports/Cookie":35,"./Exports/HomeSection":36,"./Exports/IconText":37,"./Exports/MangaInfo":38,"./Exports/MangaProgress":39,"./Exports/MangaUpdates":40,"./Exports/PBCanvas":41,"./Exports/PBImage":42,"./Exports/PagedResults":43,"./Exports/PartialSourceManga":44,"./Exports/RawData":45,"./Exports/Request":46,"./Exports/RequestManager":47,"./Exports/Response":48,"./Exports/SearchField":49,"./Exports/SearchRequest":50,"./Exports/SecureStateManager":51,"./Exports/SourceCookieStore":52,"./Exports/SourceInterceptor":53,"./Exports/SourceManga":54,"./Exports/SourceStateManager":55,"./Exports/Tag":56,"./Exports/TagSection":57,"./Exports/TrackedMangaChapterReadAction":58,"./Exports/TrackerActionQueue":59}],61:[function(require,module,exports){
+"use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __exportStar = (this && this.__exportStar) || function(m, exports) {
+    for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+__exportStar(require("./generated/_exports"), exports);
+__exportStar(require("./base/index"), exports);
+__exportStar(require("./compat/DyamicUI"), exports);
+
+},{"./base/index":7,"./compat/DyamicUI":16,"./generated/_exports":60}],62:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CacheManager = void 0;
@@ -393,21 +488,20 @@ class CacheManager {
 }
 exports.CacheManager = CacheManager;
 
-},{}],49:[function(require,module,exports){
+},{}],63:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.log = exports.getOptions = exports.getAuthorizationString = exports.getKavitaAPI = exports.DEFAULT_VALUES = exports.searchRequestToString = exports.reqeustToString = exports.getSeriesDetails = exports.getServerUnavailableMangaTiles = exports.KavitaRequestInterceptor = exports.KAVITA_PUBLICATION_STATUS = void 0;
-const paperback_extensions_common_1 = require("paperback-extensions-common");
+exports.getOptions = exports.getAuthorizationString = exports.getKavitaAPI = exports.DEFAULT_VALUES = exports.searchRequestToString = exports.reqeustToString = exports.getSeriesDetails = exports.getServerUnavailableMangaTiles = exports.KavitaRequestInterceptor = void 0;
+const KAVITA_PUBLICATION_STATUS = {
+    0: 'Ongoing',
+    1: 'Hiatus',
+    2: 'Completed',
+    3: 'Cancelled',
+    4: 'Ended',
+};
 //
 // Kavya Common Class & Methods
 //
-exports.KAVITA_PUBLICATION_STATUS = [
-    paperback_extensions_common_1.MangaStatus.ONGOING,
-    paperback_extensions_common_1.MangaStatus.HIATUS,
-    paperback_extensions_common_1.MangaStatus.COMPLETED,
-    paperback_extensions_common_1.MangaStatus.ABANDONED,
-    paperback_extensions_common_1.MangaStatus.COMPLETED
-];
 class KavitaRequestInterceptor {
     constructor(stateManager) {
         this.stateManager = stateManager;
@@ -441,22 +535,22 @@ exports.KavitaRequestInterceptor = KavitaRequestInterceptor;
 function getServerUnavailableMangaTiles() {
     // This tile is used as a placeholder when the server is unavailable
     return [
-        createMangaTile({
-            id: 'placeholder-id',
-            title: createIconText({ text: 'Server' }),
+        App.createPartialSourceManga({
+            title: 'Server',
             image: '',
-            subtitleText: createIconText({ text: 'unavailable' }),
+            mangaId: 'placeholder-id',
+            subtitle: 'unavailable',
         }),
     ];
 }
 exports.getServerUnavailableMangaTiles = getServerUnavailableMangaTiles;
 async function getSeriesDetails(mangaId, requestManager, stateManager) {
     const kavitaAPI = await getKavitaAPI(stateManager);
-    const seriesRequest = createRequestObject({
+    const seriesRequest = App.createRequest({
         url: `${kavitaAPI.url}/Series/${mangaId}`,
         method: 'GET',
     });
-    const metadataRequest = createRequestObject({
+    const metadataRequest = App.createRequest({
         url: `${kavitaAPI.url}/Series/metadata`,
         param: `?seriesId=${mangaId}`,
         method: 'GET',
@@ -473,28 +567,36 @@ async function getSeriesDetails(mangaId, requestManager, stateManager) {
     for (const tagName of tagNames) {
         const tags = [];
         for (const tag of metadataResult[tagName]) {
-            tags.push(createTag({
+            tags.push(App.createTag({
                 id: `${tagName}-${tag.id}`,
                 label: tag.title
             }));
         }
-        tagSections.push(createTagSection({
+        tagSections.push(App.createTagSection({
             id: tagName,
             label: tagName,
             tags: tags
         }));
     }
+    let artists = [];
+    for (const penciller of metadataResult.pencillers) {
+        artists.push(penciller.name);
+    }
+    let authors = [];
+    for (const writer of metadataResult.writers) {
+        authors.push(writer.name);
+    }
     return {
-        id: mangaId,
-        titles: [seriesResult.name],
         image: `${kavitaAPI.url}/image/series-cover?seriesId=${mangaId}&apiKey=${kavitaAPI.key}`,
-        rating: seriesResult.userRating,
-        status: exports.KAVITA_PUBLICATION_STATUS[metadataResult.publicationStatus] ?? paperback_extensions_common_1.MangaStatus.UNKNOWN,
-        artist: typeof metadataResult.pencillers[0] === 'undefined' ? '' : metadataResult.pencillers[0].name,
-        author: typeof metadataResult.writers[0] === 'undefined' ? '' : metadataResult.writers[0].name,
+        artist: artists.join(', '),
+        author: authors.join(', '),
         desc: metadataResult.summary.replace(/<[^>]+>/g, ''),
+        status: KAVITA_PUBLICATION_STATUS[metadataResult.publicationStatus] ?? 'Unknown',
+        hentai: false,
+        titles: [seriesResult.name],
+        rating: seriesResult.userRating,
         tags: tagSections,
-        lastUpdate: new Date(seriesResult.lastChapterAdded)
+        //additionalInfo: Record<string, string>
     };
 }
 exports.getSeriesDetails = getSeriesDetails;
@@ -537,11 +639,11 @@ async function getKavitaAPI(stateManager) {
 exports.getKavitaAPI = getKavitaAPI;
 async function getAuthorizationString(stateManager) {
     const kavitaAPI = await getKavitaAPI(stateManager);
-    const manager = createRequestManager({
+    const manager = App.createRequestManager({
         requestsPerSecond: 4,
         requestTimeout: 20000
     });
-    const request = createRequestObject({
+    const request = App.createRequest({
         url: `${kavitaAPI.url}/Plugin/authenticate`,
         param: `?apiKey=${kavitaAPI.key}&pluginName=Kavya`,
         method: 'POST'
@@ -562,19 +664,12 @@ async function getOptions(stateManager) {
     return { showOnDeck, showRecentlyUpdated, showNewlyAdded, excludeBookTypeLibrary, enableRecursiveSearch, displayReadInstedOfUnread, pageSize };
 }
 exports.getOptions = getOptions;
-//
-// Kavya Logging Methods
-//
-function log(message) {
-    console.log(`[Kavya] ${message}`);
-}
-exports.log = log;
 
-},{"paperback-extensions-common":4}],50:[function(require,module,exports){
+},{}],64:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Kavya = exports.KavyaInfo = void 0;
-const paperback_extensions_common_1 = require("paperback-extensions-common");
+const types_1 = require("@paperback/types");
 const Settings_1 = require("./Settings");
 const Common_1 = require("./Common");
 const Search_1 = require("./Search");
@@ -586,51 +681,55 @@ const sortHelper = (a, b) => {
     return a.volume - b.volume;
 };
 exports.KavyaInfo = {
-    version: '1.2.9',
+    version: '1.3.0',
     name: 'Kavya',
     icon: 'icon.png',
     author: 'ACK72',
     authorWebsite: 'https://github.com/ACK72',
     description: 'Kavita client extension for Paperback',
-    contentRating: paperback_extensions_common_1.ContentRating.EVERYONE,
+    contentRating: types_1.ContentRating.EVERYONE,
     websiteBaseURL: 'https://www.kavitareader.com/',
     sourceTags: [
         {
             text: 'Kavita',
-            type: paperback_extensions_common_1.TagType.GREEN,
+            type: types_1.BadgeColor.GREEN,
         },
     ],
+    intents: types_1.SourceIntents.HOMEPAGE_SECTIONS | types_1.SourceIntents.MANGA_CHAPTERS | types_1.SourceIntents.MANGA_TRACKING | types_1.SourceIntents.SETTINGS_UI
 };
-class Kavya extends paperback_extensions_common_1.Source {
+class Kavya {
     constructor() {
-        super(...arguments);
-        this.stateManager = createSourceStateManager({});
+        this.stateManager = App.createSourceStateManager();
         this.cacheManager = new CacheManager_1.CacheManager();
         this.interceptor = new Common_1.KavitaRequestInterceptor(this.stateManager);
-        this.requestManager = createRequestManager({
-            requestsPerSecond: 4,
+        this.requestManager = App.createRequestManager({
+            requestsPerSecond: 8,
             requestTimeout: 20000,
             interceptor: this.interceptor
         });
     }
     async getSourceMenu() {
-        return createSection({
+        return App.createDUISection({
             id: 'main',
             header: 'Source Settings',
+            isHidden: false,
             rows: async () => [
                 (0, Settings_1.serverSettingsMenu)(this.stateManager, this.interceptor)
             ],
         });
     }
     async getMangaDetails(mangaId) {
-        return createManga({
-            ...(await (0, Common_1.getSeriesDetails)(mangaId, this.requestManager, this.stateManager))
+        return App.createSourceManga({
+            id: mangaId,
+            mangaInfo: App.createMangaInfo({
+                ...(await (0, Common_1.getSeriesDetails)(mangaId, this.requestManager, this.stateManager))
+            })
         });
     }
     async getChapters(mangaId) {
         const kavitaAPI = await (0, Common_1.getKavitaAPI)(this.stateManager);
         const { displayReadInstedOfUnread } = await (0, Common_1.getOptions)(this.stateManager);
-        const request = createRequestObject({
+        const request = App.createRequest({
             url: `${kavitaAPI.url}/Series/volumes`,
             param: `?seriesId=${mangaId}`,
             method: 'GET',
@@ -668,17 +767,15 @@ class Kavya extends paperback_extensions_common_1.Source {
         }
         chapters.sort(sortHelper);
         return chapters.concat(specials).map((item, index) => {
-            const chapter = createChapter({
+            return App.createChapter({
                 ...item,
-                chapNum: index // paperback sorts by chapNum when chapter is created, so we need to set it as index
+                sortingIndex: index
             });
-            chapter.chapNum = item.chapNum; // revert to the original chapNum, to display it correctly
-            return chapter;
         });
     }
     async getChapterDetails(mangaId, chapterId) {
         const kavitaAPI = await (0, Common_1.getKavitaAPI)(this.stateManager);
-        const request = createRequestObject({
+        const request = App.createRequest({
             url: `${kavitaAPI.url}/Series/chapter`,
             param: `?chapterId=${chapterId}`,
             method: 'GET',
@@ -689,11 +786,10 @@ class Kavya extends paperback_extensions_common_1.Source {
         for (let i = 0; i < result.pages; i++) {
             pages.push(`FAKE*/${i}?*REAL*${kavitaAPI.url}/Reader/image?chapterId=${chapterId}&page=${i}&apiKey=${kavitaAPI.key}&extractPdf=true`);
         }
-        return createChapterDetails({
+        return App.createChapterDetails({
             id: chapterId,
             mangaId: mangaId,
-            pages: pages,
-            longStrip: false,
+            pages: pages
         });
     }
     async getSearchResults(searchQuery, 
@@ -704,18 +800,17 @@ class Kavya extends paperback_extensions_common_1.Source {
     async getSearchTags() {
         // This function is also called when the user search in an other source. It should not throw if the server is unavailable.
         if (!(await this.interceptor.isServerAvailable())) {
-            (0, Common_1.log)('getSearchTags failed because server settings are invalid');
             return [];
         }
         const kavitaAPI = await (0, Common_1.getKavitaAPI)(this.stateManager);
         const { excludeBookTypeLibrary } = await (0, Common_1.getOptions)(this.stateManager);
         const includeLibraryIds = [];
-        const libraryRequest = createRequestObject({
+        const libraryRequest = App.createRequest({
             url: `${kavitaAPI.url}/Library`,
             method: 'GET',
         });
         const libraryResponse = await this.requestManager.schedule(libraryRequest, 1);
-        const libraryResult = JSON.parse(libraryResponse.data);
+        const libraryResult = JSON.parse(libraryResponse.data ?? '[]');
         for (const library of libraryResult) {
             if (excludeBookTypeLibrary && library.type === 2)
                 continue;
@@ -726,13 +821,13 @@ class Kavya extends paperback_extensions_common_1.Source {
         const tagSections = [];
         const promises = [];
         for (const tagName of tagNames) {
-            const request = createRequestObject({
+            const request = App.createRequest({
                 url: `${kavitaAPI.url}/Metadata/${tagName}`,
                 param: `?libraryIds=${includeLibraryIds.join(',')}`,
                 method: 'GET',
             });
             promises.push(this.requestManager.schedule(request, 1).then((response) => {
-                const result = JSON.parse(response.data);
+                const result = JSON.parse(response.data ?? '[]');
                 const names = [];
                 const tags = [];
                 // rome-ignore lint/suspicious/noExplicitAny: <explanation>
@@ -741,14 +836,14 @@ class Kavya extends paperback_extensions_common_1.Source {
                         case 'people':
                             if (!names.includes(item.name)) {
                                 names.push(item.name);
-                                tags.push(createTag({ id: `${tagName}-${item.role}.${item.id}`, label: item.name }));
+                                tags.push(App.createTag({ id: `${tagName}-${item.role}.${item.id}`, label: item.name }));
                             }
                             break;
                         default:
-                            tags.push(createTag({ id: `${tagName}-${item.id}`, label: item.title }));
+                            tags.push(App.createTag({ id: `${tagName}-${item.id}`, label: item.title }));
                     }
                 });
-                tagSections[tagName] = createTagSection({
+                tagSections[tagName] = App.createTagSection({
                     id: tagName,
                     label: tagName,
                     tags: tags
@@ -761,12 +856,12 @@ class Kavya extends paperback_extensions_common_1.Source {
     async getHomePageSections(sectionCallback) {
         // This function is called on the homepage and should not throw if the server is unavailable
         if (!(await this.interceptor.isServerAvailable())) {
-            (0, Common_1.log)('getHomePageSections failed because server settings are invalid');
-            sectionCallback(createHomeSection({
+            sectionCallback(App.createHomeSection({
                 id: 'placeholder-id',
                 title: 'Library',
                 items: (0, Common_1.getServerUnavailableMangaTiles)(),
-                view_more: false
+                containsMoreItems: false,
+                type: 'singleRowNormal'
             }));
             return;
         }
@@ -778,42 +873,46 @@ class Kavya extends paperback_extensions_common_1.Source {
         // The source define two homepage sections: new and latest
         const sections = [];
         if (showOnDeck) {
-            sections.push(createHomeSection({
+            sections.push(App.createHomeSection({
                 id: 'ondeck',
                 title: 'On Deck',
-                view_more: false,
+                containsMoreItems: false,
+                type: 'singleRowNormal'
             }));
         }
         if (showRecentlyUpdated) {
-            sections.push(createHomeSection({
+            sections.push(App.createHomeSection({
                 id: 'recentlyupdated',
                 title: 'Recently Updated Series',
-                view_more: true,
+                containsMoreItems: false,
+                type: 'singleRowNormal'
             }));
         }
         if (showNewlyAdded) {
-            sections.push(createHomeSection({
+            sections.push(App.createHomeSection({
                 id: 'newlyadded',
                 title: 'Newly Added Series',
-                view_more: true,
+                containsMoreItems: true,
+                type: 'singleRowNormal'
             }));
         }
-        const request = createRequestObject({
+        const request = App.createRequest({
             url: `${kavitaAPI.url}/Library`,
             method: 'GET',
         });
         const response = await this.requestManager.schedule(request, 1);
-        const result = JSON.parse(response.data);
+        const result = JSON.parse(response.data ?? '[]');
         const excludeLibraryIds = [];
         for (const library of result) {
             if (excludeBookTypeLibrary && library.type === 2) {
                 excludeLibraryIds.push(library.id);
                 continue;
             }
-            sections.push(createHomeSection({
+            sections.push(App.createHomeSection({
                 id: `${library.id}`,
                 title: library.name,
-                view_more: true,
+                containsMoreItems: true,
+                type: 'singleRowNormal'
             }));
         }
         const promises = [];
@@ -838,24 +937,25 @@ class Kavya extends paperback_extensions_common_1.Source {
                     body = { 'libraries': [parseInt(section.id)] };
                     break;
             }
-            const request = createRequestObject({
+            const request = App.createRequest({
                 url: apiPath,
                 data: JSON.stringify(body),
                 method: 'POST',
             });
             // Get the section data
             promises.push(this.requestManager.schedule(request, 1).then((response) => {
-                const result = JSON.parse(response.data);
+                const result = JSON.parse(response.data ?? '[]');
                 this.cacheManager.setCachedData((0, Common_1.reqeustToString)(request), result);
                 const tiles = [];
                 for (const series of result.slice(0, pageSize)) {
                     if (excludeBookTypeLibrary && excludeLibraryIds.includes(series.libraryId)) {
                         continue;
                     }
-                    tiles.push(createMangaTile({
-                        id: `${series[id]}`,
-                        title: createIconText({ text: series[title] }),
+                    tiles.push(App.createPartialSourceManga({
+                        title: series[title],
                         image: `${kavitaAPI.url}/image/series-cover?seriesId=${series[id]}&apiKey=${kavitaAPI.key}`,
+                        mangaId: `${series[id]}`,
+                        subtitle: undefined
                     }));
                 }
                 section.items = tiles;
@@ -890,7 +990,7 @@ class Kavya extends paperback_extensions_common_1.Source {
                 body = { 'libraries': [parseInt(homepageSectionId)] };
                 break;
         }
-        const request = createRequestObject({
+        const request = App.createRequest({
             url: apiPath,
             data: JSON.stringify(body),
             method: 'POST'
@@ -902,27 +1002,179 @@ class Kavya extends paperback_extensions_common_1.Source {
         }
         else {
             const response = await this.requestManager.schedule(request, 1);
-            result = JSON.parse(response.data);
+            result = JSON.parse(response.data ?? '[]');
             this.cacheManager.setCachedData((0, Common_1.reqeustToString)(request), result);
         }
         const tiles = [];
         for (const series of result.slice(page * pageSize, (page + 1) * pageSize)) {
-            tiles.push(createMangaTile({
-                id: `${series[id]}`,
-                title: createIconText({ text: series[title] }),
-                image: `${kavitaAPI.url}/image/series-cover?seriesId=${series[id]}&apiKey=${kavitaAPI.key}`
+            tiles.push(App.createPartialSourceManga({
+                title: series[title],
+                image: `${kavitaAPI.url}/image/series-cover?seriesId=${series[id]}&apiKey=${kavitaAPI.key}`,
+                mangaId: `${series[id]}`,
+                subtitle: undefined
             }));
         }
         metadata = tiles.length === 0 ? undefined : { page: page + 1 };
-        return createPagedResults({
+        return App.createPagedResults({
             results: tiles,
             metadata: metadata
         });
     }
+    async getMangaProgress(mangaId) {
+        const kavitaAPI = await (0, Common_1.getKavitaAPI)(this.stateManager);
+        const request = App.createRequest({
+            url: `${kavitaAPI.url}/Series/volumes`,
+            param: `?seriesId=${mangaId}`,
+            method: 'GET',
+        });
+        const response = await this.requestManager.schedule(request, 1);
+        const result = typeof response.data === 'string' ? JSON.parse(response.data) : response.data;
+        // rome-ignore lint/suspicious/noExplicitAny: <explanation>
+        const chapters = [];
+        for (const volume of result) {
+            for (const chapter of volume.chapters) {
+                // rome-ignore lint/suspicious/noExplicitAny: <explanation>
+                const item = {
+                    chapNum: parseFloat(chapter.number),
+                    volume: volume.number,
+                    time: new Date(chapter.lastReadingProgressUtc),
+                    read: chapter.pagesRead === chapter.pages,
+                };
+                if (!chapter.isSpecial)
+                    chapters.push(item);
+            }
+        }
+        chapters.sort(sortHelper);
+        let lastReadChapterNumber = 0;
+        let lastReadVolumeNumber = 0;
+        let lastReadTime = new Date(0);
+        for (const chapter of chapters) {
+            if (chapter.read) {
+                lastReadChapterNumber = chapter.chapNum;
+                lastReadVolumeNumber = chapter.volume;
+                lastReadTime = chapter.time;
+            }
+            else {
+                break;
+            }
+        }
+        return App.createMangaProgress({
+            mangaId: mangaId,
+            lastReadChapterNumber: lastReadChapterNumber,
+            lastReadVolumeNumber: lastReadVolumeNumber,
+            trackedListName: 'TEST',
+            lastReadTime: lastReadTime
+        });
+    }
+    async getMangaProgressManagementForm(mangaId) {
+        return App.createDUIForm({
+            sections: async () => {
+                const kavitaAPI = await (0, Common_1.getKavitaAPI)(this.stateManager);
+                const request = App.createRequest({
+                    url: `${kavitaAPI.url}/Series/${mangaId}`,
+                    method: 'GET',
+                });
+                const response = await this.requestManager.schedule(request, 1);
+                const result = JSON.parse(response?.data ?? '{}');
+                return [
+                    App.createDUISection({
+                        id: 'seriesInfo',
+                        header: 'Info',
+                        isHidden: false,
+                        rows: async () => [
+                            App.createDUILabel({
+                                id: 'seriesId',
+                                label: 'SeriesID',
+                                value: mangaId
+                            }),
+                            App.createDUILabel({
+                                id: 'libraryId',
+                                label: 'LibraryID',
+                                value: `${result.libraryId}`
+                            }),
+                            App.createDUILabel({
+                                id: 'pagesRead',
+                                label: 'Pages Read',
+                                value: `${result.pagesRead} / ${result.pages}`
+                            })
+                        ]
+                    }),
+                    App.createDUISection({
+                        id: 'userReview',
+                        header: 'Rating & Review',
+                        isHidden: false,
+                        rows: async () => [
+                            App.createDUIStepper({
+                                id: 'rating',
+                                label: 'Rating',
+                                value: result.userRating ?? 0,
+                                min: 0,
+                                max: 5,
+                                step: 1
+                            }),
+                            App.createDUIInputField({
+                                id: 'review',
+                                label: '',
+                                value: result.userReview ?? '',
+                            })
+                        ]
+                    })
+                ];
+            },
+            onSubmit: async (values) => {
+                const kavitaAPI = await (0, Common_1.getKavitaAPI)(this.stateManager);
+                await this.requestManager.schedule(App.createRequest({
+                    url: `${kavitaAPI.url}/Series/update-rating`,
+                    data: JSON.stringify({ seriesId: mangaId, userRating: values.rating, userReview: values.review }),
+                    method: 'POST'
+                }), 1);
+            }
+        });
+    }
+    async processChapterReadActionQueue(actionQueue) {
+        const chapterReadActions = await actionQueue.queuedChapterReadActions();
+        const kavitaAPI = await (0, Common_1.getKavitaAPI)(this.stateManager);
+        for (const readAction of chapterReadActions) {
+            if (!(await this.interceptor.isServerAvailable())) {
+                await actionQueue.retryChapterReadAction(readAction);
+                continue;
+            }
+            try {
+                const chapterRequest = App.createRequest({
+                    url: `${kavitaAPI.url}/Reader/chapter-info`,
+                    param: `?chapterId=${readAction.sourceChapterId}`,
+                    method: 'GET',
+                });
+                const chapterResponse = await this.requestManager.schedule(chapterRequest, 1);
+                const chapterResult = JSON.parse(chapterResponse?.data ?? '{}');
+                const progressRequest = App.createRequest({
+                    url: `${kavitaAPI.url}/Reader/progress`,
+                    data: JSON.stringify({
+                        volumeId: chapterResult.volumeId,
+                        chapterId: parseInt(readAction.sourceChapterId),
+                        pageNum: chapterResult.pages,
+                        seriesId: chapterResult.seriesId,
+                        libraryId: chapterResult.libraryId
+                    }),
+                    method: 'POST',
+                });
+                const progressResponse = await this.requestManager.schedule(progressRequest, 1);
+                if (progressResponse.status < 400) {
+                    await actionQueue.discardChapterReadAction(readAction);
+                }
+                else {
+                    await actionQueue.retryChapterReadAction(readAction);
+                }
+            }
+            catch (error) {
+                await actionQueue.retryChapterReadAction(readAction);
+            }
+        }
+    }
 }
 exports.Kavya = Kavya;
 
-},{"./CacheManager":48,"./Common":49,"./Search":51,"./Settings":52,"paperback-extensions-common":4}],51:[function(require,module,exports){
+},{"./CacheManager":62,"./Common":63,"./Search":65,"./Settings":66,"@paperback/types":61}],65:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.searchRequest = void 0;
@@ -947,8 +1199,7 @@ async function searchRequest(searchQuery,
 metadata, requestManager, interceptor, stateManager, cacheManager) {
     // This function is also called when the user search in an other source. It should not throw if the server is unavailable.
     if (!(await interceptor.isServerAvailable())) {
-        (0, Common_1.log)('searchRequest failed because server settings are invalid');
-        return createPagedResults({
+        return App.createPagedResults({
             results: (0, Common_1.getServerUnavailableMangaTiles)(),
         });
     }
@@ -957,12 +1208,12 @@ metadata, requestManager, interceptor, stateManager, cacheManager) {
     const page = metadata?.page ?? 0;
     const excludeLibraryIds = [];
     if (excludeBookTypeLibrary) {
-        const request = createRequestObject({
+        const request = App.createRequest({
             url: `${kavitaAPI.url}/Library`,
             method: 'GET'
         });
         const response = await requestManager.schedule(request, 1);
-        const result = JSON.parse(response.data);
+        const result = JSON.parse(response.data ?? '[]');
         for (const library of result) {
             if (library.type === 2) {
                 excludeLibraryIds.push(library.id);
@@ -979,23 +1230,24 @@ metadata, requestManager, interceptor, stateManager, cacheManager) {
     }
     else {
         if (typeof searchQuery.title === 'string' && searchQuery.title !== '') {
-            const titleRequest = createRequestObject({
+            const titleRequest = App.createRequest({
                 url: `${kavitaAPI.url}/Search/search`,
                 param: `?queryString=${encodeURIComponent(searchQuery.title)}`,
                 method: 'GET'
             });
             // We don't want to throw if the server is unavailable
             const titleResponse = await requestManager.schedule(titleRequest, 1);
-            const titleResult = JSON.parse(titleResponse.data);
+            const titleResult = JSON.parse(titleResponse.data ?? '[]');
             for (const manga of titleResult.series) {
                 if (excludeLibraryIds.includes(manga.libraryId)) {
                     continue;
                 }
                 titleSearchIds.push(manga.seriesId);
-                titleSearchTiles.push(createMangaTile({
-                    id: `${manga.seriesId}`,
-                    title: createIconText({ text: manga.name }),
-                    image: `${kavitaAPI.url}/image/series-cover?seriesId=${manga.seriesId}&apiKey=${kavitaAPI.key}`
+                titleSearchTiles.push(App.createPartialSourceManga({
+                    title: manga.name,
+                    image: `${kavitaAPI.url}/image/series-cover?seriesId=${manga.seriesId}&apiKey=${kavitaAPI.key}`,
+                    mangaId: `${manga.seriesId}`,
+                    subtitle: undefined
                 }));
             }
             if (enableRecursiveSearch) {
@@ -1005,28 +1257,29 @@ metadata, requestManager, interceptor, stateManager, cacheManager) {
                         let titleTagRequest;
                         switch (tagName) {
                             case 'persons':
-                                titleTagRequest = createRequestObject({
+                                titleTagRequest = App.createRequest({
                                     url: `${kavitaAPI.url}/Series/all`,
                                     data: JSON.stringify({ [KAVITA_PERSON_ROLES[item.role]]: [item.id] }),
                                     method: 'POST'
                                 });
                                 break;
                             default:
-                                titleTagRequest = createRequestObject({
+                                titleTagRequest = App.createRequest({
                                     url: `${kavitaAPI.url}/Series/all`,
                                     data: JSON.stringify({ [tagName]: [item.id] }),
                                     method: 'POST'
                                 });
                         }
                         const titleTagResponse = await requestManager.schedule(titleTagRequest, 1);
-                        const titleTagResult = JSON.parse(titleTagResponse.data);
+                        const titleTagResult = JSON.parse(titleTagResponse.data ?? '[]');
                         for (const manga of titleTagResult) {
                             if (!titleSearchIds.includes(manga.id)) {
                                 titleSearchIds.push(manga.id);
-                                titleSearchTiles.push(createMangaTile({
-                                    id: `${manga.id}`,
-                                    title: createIconText({ text: manga.name }),
-                                    image: `${kavitaAPI.url}/image/series-cover?seriesId=${manga.id}&apiKey=${kavitaAPI.key}`
+                                titleSearchTiles.push(App.createPartialSourceManga({
+                                    title: manga.name,
+                                    image: `${kavitaAPI.url}/image/series-cover?seriesId=${manga.id}&apiKey=${kavitaAPI.key}`,
+                                    mangaId: `${manga.id}`,
+                                    subtitle: undefined
                                 }));
                             }
                         }
@@ -1048,30 +1301,31 @@ metadata, requestManager, interceptor, stateManager, cacheManager) {
                         body[tag.id.split('-')[0] ?? ''].push(parseInt(tag.id.split('-')[1] ?? '0'));
                 }
             });
-            const peopleRequest = createRequestObject({
+            const peopleRequest = App.createRequest({
                 url: `${kavitaAPI.url}/Metadata/people`,
                 method: 'GET'
             });
             const peopleResponse = await requestManager.schedule(peopleRequest, 1);
-            const peopleResult = JSON.parse(peopleResponse.data);
+            const peopleResult = JSON.parse(peopleResponse.data ?? '[]');
             for (const people of peopleResult) {
                 if (peopleTags.includes(people.name)) {
                     body[KAVITA_PERSON_ROLES[people.role]] = body[KAVITA_PERSON_ROLES[people.role]] ?? [];
                     body[KAVITA_PERSON_ROLES[people.role]].push(people.id);
                 }
             }
-            const tagRequst = createRequestObject({
+            const tagRequst = App.createRequest({
                 url: `${kavitaAPI.url}/Series/all`,
                 data: JSON.stringify(body),
                 method: 'POST'
             });
             const tagResponse = await requestManager.schedule(tagRequst, 1);
-            const tagResult = JSON.parse(tagResponse.data);
+            const tagResult = JSON.parse(tagResponse.data ?? '[]');
             for (const manga of tagResult) {
-                tagSearchTiles.push(createMangaTile({
-                    id: `${manga.id}`,
-                    title: createIconText({ text: manga.name }),
+                tagSearchTiles.push(App.createPartialSourceManga({
+                    title: manga.name,
                     image: `${kavitaAPI.url}/image/series-cover?seriesId=${manga.id}&apiKey=${kavitaAPI.key}`,
+                    mangaId: `${manga.id}`,
+                    subtitle: undefined
                 }));
             }
         }
@@ -1080,14 +1334,14 @@ metadata, requestManager, interceptor, stateManager, cacheManager) {
     }
     result = result.slice(page * pageSize, (page + 1) * pageSize);
     metadata = result.length === 0 ? undefined : { page: page + 1 };
-    return createPagedResults({
+    return App.createPagedResults({
         results: result,
         metadata: metadata
     });
 }
 exports.searchRequest = searchRequest;
 
-},{"./Common":49}],52:[function(require,module,exports){
+},{"./Common":63}],66:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.setStateData = exports.retrieveStateData = exports.serverSettingsMenu = void 0;
@@ -1095,104 +1349,167 @@ const Common_1 = require("./Common");
 /* UI definition */
 // NOTE: Submitted data won't be tested
 const serverSettingsMenu = (stateManager, interceptor) => {
-    return createNavigationButton({
+    return App.createDUINavigationButton({
         id: "server_settings",
-        value: "",
         label: "Server Settings",
-        form: createForm({
-            // rome-ignore lint/suspicious/noExplicitAny: <explanation>
-            onSubmit: async (values) => setStateData(stateManager, interceptor, values),
-            validate: async () => true,
+        form: App.createDUIForm({
             sections: async () => [
-                createSection({
+                App.createDUISection({
                     id: "information",
                     header: undefined,
+                    isHidden: false,
                     rows: async () => [
-                        createMultilineLabel({
+                        App.createDUIMultilineLabel({
                             label: "Demo Server",
                             value: "Server URL: https://demo.kavitareader.com\nUsername: demouser\nPassword: Demouser64\n\nNote: Values are case-sensitive.",
                             id: "description",
                         }),
                     ],
                 }),
-                createSection({
+                App.createDUISection({
                     id: "serverSettings",
                     header: "Server Settings",
+                    isHidden: false,
                     rows: async () => retrieveStateData(stateManager).then((values) => [
-                        createInputField({
+                        App.createDUIInputField({
                             id: "kavitaAddress",
                             label: "Server URL",
-                            placeholder: "http://127.0.0.1:8080",
-                            value: values.kavitaURL,
-                            maskInput: false,
+                            value: App.createDUIBinding({
+                                async get() {
+                                    return values.kavitaURL;
+                                },
+                                async set(value) {
+                                    values.kavitaURL = value;
+                                    await setStateData(stateManager, interceptor, values);
+                                }
+                            })
                         }),
-                        // TS-Ignoring because this isnt documented yet
-                        // Fallback to default input field if the app version doesnt support
-                        // SecureInputField
-                        // @ts-ignore
-                        (typeof createSecureInputField === 'undefined' ? createInputField : createSecureInputField)({
-                            id: "kavitaAPIKey",
-                            label: "API Key",
-                            placeholder: "Kavita API Key",
-                            value: values.kavitaAPIKey
+                        App.createDUISecureInputField({
+                            id: 'kavitaAPIKey',
+                            label: 'API Key',
+                            value: App.createDUIBinding({
+                                async get() {
+                                    return values.kavitaAPIKey;
+                                },
+                                async set(newValue) {
+                                    values.kavitaAPIKey = newValue;
+                                    await setStateData(stateManager, interceptor, values);
+                                }
+                            })
                         }),
-                        createInputField({
+                        App.createDUIInputField({
                             id: 'pageSize',
                             label: 'Page Size',
-                            placeholder: 'Recommended size is 20 for iOS and 40 for iPadOS',
-                            value: values.pageSize.toString(),
-                            maskInput: false,
+                            value: App.createDUIBinding({
+                                async get() {
+                                    return typeof values.pageSize === 'string' ? values.pageSize : values.pageSize.toString();
+                                },
+                                async set(value) {
+                                    values.pageSize = value;
+                                    await setStateData(stateManager, interceptor, values);
+                                }
+                            })
                         })
                     ]),
                 }),
-                createSection({
+                App.createDUISection({
                     id: "sourceOptions",
                     header: "Source Options",
+                    isHidden: false,
                     footer: "",
                     rows: async () => retrieveStateData(stateManager).then((values) => [
-                        createSwitch({
+                        App.createDUISwitch({
                             id: 'showOnDeck',
-                            label: 'Show On Deck',
-                            value: values.showOnDeck,
+                            label: 'Show On Deck', value: App.createDUIBinding({
+                                async get() {
+                                    return values.showOnDeck;
+                                },
+                                async set(value) {
+                                    values.showOnDeck = value;
+                                    await setStateData(stateManager, interceptor, values);
+                                }
+                            })
                         }),
-                        createSwitch({
+                        App.createDUISwitch({
                             id: 'showRecentlyUpdated',
                             label: 'Show Recently Updated',
-                            value: values.showRecentlyUpdated,
+                            value: App.createDUIBinding({
+                                async get() {
+                                    return values.showRecentlyUpdated;
+                                },
+                                async set(value) {
+                                    values.showRecentlyUpdated = value;
+                                    await setStateData(stateManager, interceptor, values);
+                                }
+                            })
                         }),
-                        createSwitch({
+                        App.createDUISwitch({
                             id: 'showNewlyAdded',
                             label: 'Show Newly Added',
-                            value: values.showNewlyAdded,
+                            value: App.createDUIBinding({
+                                async get() {
+                                    return values.showNewlyAdded;
+                                },
+                                async set(value) {
+                                    values.showNewlyAdded = value;
+                                    await setStateData(stateManager, interceptor, values);
+                                }
+                            })
                         }),
-                        createSwitch({
+                        App.createDUISwitch({
                             id: 'excludeBookTypeLibrary',
                             label: 'Exclude Book Type Library',
-                            value: values.excludeBookTypeLibrary,
+                            value: App.createDUIBinding({
+                                async get() {
+                                    return values.excludeBookTypeLibrary;
+                                },
+                                async set(value) {
+                                    values.excludeBookTypeLibrary = value;
+                                    await setStateData(stateManager, interceptor, values);
+                                }
+                            })
                         })
                     ]),
                 }),
-                createSection({
+                App.createDUISection({
                     id: "searchOptions",
                     header: "Search Options",
+                    isHidden: false,
                     footer: "",
                     rows: async () => retrieveStateData(stateManager).then((values) => [
-                        createSwitch({
+                        App.createDUISwitch({
                             id: 'enableRecursiveSearch',
                             label: 'Enable Recursive Search',
-                            value: values.enableRecursiveSearch,
+                            value: App.createDUIBinding({
+                                async get() {
+                                    return values.enableRecursiveSearch;
+                                },
+                                async set(value) {
+                                    values.enableRecursiveSearch = value;
+                                    await setStateData(stateManager, interceptor, values);
+                                }
+                            })
                         })
                     ]),
                 }),
-                createSection({
+                App.createDUISection({
                     id: "miscellaneous",
                     header: "MISCELLANEOUS",
+                    isHidden: false,
                     footer: "",
                     rows: async () => retrieveStateData(stateManager).then((values) => [
-                        createSwitch({
+                        App.createDUISwitch({
                             id: 'displayReadInstedOfUnread',
                             label: 'Display Status With Read Instead Of Unread',
-                            value: values.displayReadInstedOfUnread,
+                            value: App.createDUIBinding({
+                                async get() {
+                                    return values.displayReadInstedOfUnread;
+                                },
+                                async set(value) {
+                                    values.displayReadInstedOfUnread = value;
+                                    await setStateData(stateManager, interceptor, values);
+                                }
+                            })
                         })
                     ]),
                 }),
@@ -1236,5 +1553,5 @@ async function setStateData(stateManager, interceptor, data) {
 }
 exports.setStateData = setStateData;
 
-},{"./Common":49}]},{},[50])(50)
+},{"./Common":63}]},{},[64])(64)
 });
