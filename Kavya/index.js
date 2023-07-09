@@ -681,7 +681,7 @@ const sortHelper = (a, b) => {
     return a.volume - b.volume;
 };
 exports.KavyaInfo = {
-    version: '1.3.0',
+    version: '1.3.1',
     name: 'Kavya',
     icon: 'icon.png',
     author: 'ACK72',
@@ -1376,10 +1376,10 @@ const serverSettingsMenu = (stateManager, interceptor) => {
                             label: "Server URL",
                             value: App.createDUIBinding({
                                 async get() {
-                                    return values.kavitaURL;
+                                    return values.kavitaAddress;
                                 },
                                 async set(value) {
-                                    values.kavitaURL = value;
+                                    values.kavitaAddress = value;
                                     await setStateData(stateManager, interceptor, values);
                                 }
                             })
@@ -1519,7 +1519,7 @@ const serverSettingsMenu = (stateManager, interceptor) => {
 };
 exports.serverSettingsMenu = serverSettingsMenu;
 async function retrieveStateData(stateManager) {
-    const kavitaURL = await stateManager.retrieve('kavitaAddress') ?? Common_1.DEFAULT_VALUES.kavitaAddress;
+    const kavitaAddress = await stateManager.retrieve('kavitaAddress') ?? Common_1.DEFAULT_VALUES.kavitaAddress;
     const kavitaAPIKey = await stateManager.keychain.retrieve('kavitaAPIKey') ?? Common_1.DEFAULT_VALUES.kavitaAPIKey;
     const showOnDeck = await stateManager.retrieve('showOnDeck') ?? Common_1.DEFAULT_VALUES.showOnDeck;
     const showRecentlyUpdated = await stateManager.retrieve('showRecentlyUpdated') ?? Common_1.DEFAULT_VALUES.showRecentlyUpdated;
@@ -1528,7 +1528,7 @@ async function retrieveStateData(stateManager) {
     const enableRecursiveSearch = await stateManager.retrieve('enableRecursiveSearch') ?? Common_1.DEFAULT_VALUES.enableRecursiveSearch;
     const displayReadInstedOfUnread = await stateManager.retrieve('displayReadInstedOfUnread') ?? Common_1.DEFAULT_VALUES.displayReadInstedOfUnread;
     const pageSize = await stateManager.retrieve('pageSize') ?? Common_1.DEFAULT_VALUES.pageSize;
-    return { kavitaURL, kavitaAPIKey, showOnDeck, showRecentlyUpdated, showNewlyAdded, excludeBookTypeLibrary, enableRecursiveSearch, displayReadInstedOfUnread, pageSize };
+    return { kavitaAddress, kavitaAPIKey, showOnDeck, showRecentlyUpdated, showNewlyAdded, excludeBookTypeLibrary, enableRecursiveSearch, displayReadInstedOfUnread, pageSize };
 }
 exports.retrieveStateData = retrieveStateData;
 // rome-ignore lint/suspicious/noExplicitAny: <explanation>
