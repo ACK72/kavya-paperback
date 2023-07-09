@@ -24,7 +24,7 @@ export class CacheManager {
 		const key = this.getHash(str);
 
 		this.cachedData = Object.fromEntries(
-  			Object.entries(this.cachedData).filter(
+			Object.entries(this.cachedData).filter(
 				([_, value]) => 0 < (time.getTime() - value.time.getTime()) && (time.getTime() - value.time.getTime()) < 180 * 1000
 			)
 		);

@@ -1,116 +1,179 @@
 import {
-	NavigationButton,
+	DUINavigationButton,
 	SourceStateManager,
-} from "paperback-extensions-common";
+} from '@paperback/types';
 import {
 	DEFAULT_VALUES,
 	KavitaRequestInterceptor
-} from "./Common";
+} from './Common';
 
 /* UI definition */
 // NOTE: Submitted data won't be tested
 export const serverSettingsMenu = (
 	stateManager: SourceStateManager,
 	interceptor: KavitaRequestInterceptor
-): NavigationButton => {
-	return createNavigationButton({
+): DUINavigationButton => {
+	return App.createDUINavigationButton({
 		id: "server_settings",
-		value: "",
 		label: "Server Settings",
-		form: createForm({
-			// rome-ignore lint/suspicious/noExplicitAny: <explanation>
-			onSubmit: async (values: any) => setStateData(stateManager, interceptor, values),
-			validate: async () => true,
+		form: App.createDUIForm({
 			sections: async () => [
-				createSection({
+				App.createDUISection({
 					id: "information",
 					header: undefined,
+					isHidden: false,
 					rows: async () => [
-						createMultilineLabel({
+						App.createDUIMultilineLabel({
 							label: "Demo Server",
 							value: "Server URL: https://demo.kavitareader.com\nUsername: demouser\nPassword: Demouser64\n\nNote: Values are case-sensitive.",
 							id: "description",
 						}),
 					],
 				}),
-				createSection({
+				App.createDUISection({
 					id: "serverSettings",
 					header: "Server Settings",
+					isHidden: false,
 					rows: async () => retrieveStateData(stateManager).then((values) => [
-						createInputField({
+						App.createDUIInputField({
 							id: "kavitaAddress",
 							label: "Server URL",
-							placeholder: "http://127.0.0.1:8080",
-							value: values.kavitaURL,
-							maskInput: false,
+							value: App.createDUIBinding({
+								async get() {
+									return values.kavitaURL;
+								},
+								async set(value) {
+									values.kavitaURL = value;
+									await setStateData(stateManager, interceptor, values);
+								}
+							})
 						}),
-						// TS-Ignoring because this isnt documented yet
-						// Fallback to default input field if the app version doesnt support
-						// SecureInputField
-						// @ts-ignore
-						(typeof createSecureInputField === 'undefined' ? createInputField : createSecureInputField)({
-							id: "kavitaAPIKey",
-							label: "API Key",
-							placeholder: "Kavita API Key",
-							value: values.kavitaAPIKey
+						App.createDUISecureInputField({
+							id: 'kavitaAPIKey',
+							label: 'API Key',
+							value: App.createDUIBinding({
+								async get() {
+									return values.kavitaAPIKey
+								},
+								async set(newValue) {
+									values.kavitaAPIKey = newValue
+									await setStateData(stateManager, interceptor, values)
+								}
+							})
 						}),
-						createInputField({
+						App.createDUIInputField({
 							id: 'pageSize',
 							label: 'Page Size',
-							placeholder: 'Recommended size is 20 for iOS and 40 for iPadOS',
-							value: values.pageSize.toString(),
-							maskInput: false,
+							value: App.createDUIBinding({
+								async get() {
+									return typeof values.pageSize === 'string' ? values.pageSize : values.pageSize.toString();
+								},
+								async set(value) {
+									values.pageSize = value;
+									await setStateData(stateManager, interceptor, values);
+								}
+							})
 						})
 					]),
 				}),
-				createSection({
+				App.createDUISection({
 					id: "sourceOptions",
 					header: "Source Options",
+					isHidden: false,
 					footer: "",
 					rows: async () => retrieveStateData(stateManager).then((values) => [
-						createSwitch({
+						App.createDUISwitch({
 							id: 'showOnDeck',
-							label: 'Show On Deck',
-							value: values.showOnDeck,
+							label: 'Show On Deck',value: App.createDUIBinding({
+								async get() {
+									return values.showOnDeck;
+								},
+								async set(value) {
+									values.showOnDeck = value;
+									await setStateData(stateManager, interceptor, values);
+								}
+							})
 						}),
-						createSwitch({
+						App.createDUISwitch({
 							id: 'showRecentlyUpdated',
 							label: 'Show Recently Updated',
-							value: values.showRecentlyUpdated,
+							value: App.createDUIBinding({
+								async get() {
+									return values.showRecentlyUpdated;
+								},
+								async set(value) {
+									values.showRecentlyUpdated = value;
+									await setStateData(stateManager, interceptor, values);
+								}
+							})
 						}),
-						createSwitch({
+						App.createDUISwitch({
 							id: 'showNewlyAdded',
 							label: 'Show Newly Added',
-							value: values.showNewlyAdded,
+							value: App.createDUIBinding({
+								async get() {
+									return values.showNewlyAdded;
+								},
+								async set(value) {
+									values.showNewlyAdded = value;
+									await setStateData(stateManager, interceptor, values);
+								}
+							})
 						}),
-						createSwitch({
+						App.createDUISwitch({
 							id: 'excludeBookTypeLibrary',
 							label: 'Exclude Book Type Library',
-							value: values.excludeBookTypeLibrary,
+							value: App.createDUIBinding({
+								async get() {
+									return values.excludeBookTypeLibrary;
+								},
+								async set(value) {
+									values.excludeBookTypeLibrary = value;
+									await setStateData(stateManager, interceptor, values);
+								}
+							})
 						})
 					]),
 				}),
-				createSection({
+				App.createDUISection({
 					id: "searchOptions",
 					header: "Search Options",
+					isHidden: false,
 					footer: "",
 					rows: async () => retrieveStateData(stateManager).then((values) => [
-						createSwitch({
+						App.createDUISwitch({
 							id: 'enableRecursiveSearch',
 							label: 'Enable Recursive Search',
-							value: values.enableRecursiveSearch,
+							value: App.createDUIBinding({
+								async get() {
+									return values.enableRecursiveSearch;
+								},
+								async set(value) {
+									values.enableRecursiveSearch = value;
+									await setStateData(stateManager, interceptor, values);
+								}
+							})
 						})
 					]),
 				}),
-				createSection({
+				App.createDUISection({
 					id: "miscellaneous",
 					header: "MISCELLANEOUS",
+					isHidden: false,
 					footer: "",
 					rows: async () => retrieveStateData(stateManager).then((values) => [
-						createSwitch({
+						App.createDUISwitch({
 							id: 'displayReadInstedOfUnread',
 							label: 'Display Status With Read Instead Of Unread',
-							value: values.displayReadInstedOfUnread,
+							value: App.createDUIBinding({
+								async get() {
+									return values.displayReadInstedOfUnread;
+								},
+								async set(value) {
+									values.displayReadInstedOfUnread = value;
+									await setStateData(stateManager, interceptor, values);
+								}
+							})
 						})
 					]),
 				}),

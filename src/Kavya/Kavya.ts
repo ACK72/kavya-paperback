@@ -1,19 +1,26 @@
 import {
+	BadgeColor,
 	Chapter,
 	ChapterDetails,
+	ChapterProviding,
 	ContentRating,
+	DUIForm,
+	DUISection,
 	HomeSection,
-	Manga,
-	MangaTile,
+	MangaProgress,
+	MangaProgressProviding,
+	MangaProviding,
 	PagedResults,
+	PartialSourceManga,
 	SearchRequest,
-	Section,
-	Source,
+	SearchResultsProviding,
 	SourceInfo,
+	SourceIntents,
+	SourceManga,
 	Tag,
 	TagSection,
-	TagType
-} from 'paperback-extensions-common';
+	TrackerActionQueue
+} from '@paperback/types';
 import {
 	serverSettingsMenu
 } from './Settings';
@@ -23,8 +30,7 @@ import {
 	getOptions,
 	getSeriesDetails,
 	getServerUnavailableMangaTiles,
-	reqeustToString,
-	log
+	reqeustToString
 } from './Common';
 import { searchRequest } from './Search';
 import { CacheManager } from './CacheManager';
@@ -36,7 +42,7 @@ const sortHelper = (a: any, b: any) => {
 }
 
 export const KavyaInfo: SourceInfo = {
-	version: '1.2.9',
+	version: '1.3.0',
 	name: 'Kavya',
 	icon: 'icon.png',
 	author: 'ACK72',
@@ -47,36 +53,41 @@ export const KavyaInfo: SourceInfo = {
 	sourceTags: [
 		{
 			text: 'Kavita',
-			type: TagType.GREEN,
+			type: BadgeColor.GREEN,
 		},
 	],
+	intents: SourceIntents.HOMEPAGE_SECTIONS | SourceIntents.MANGA_CHAPTERS | SourceIntents.MANGA_TRACKING | SourceIntents.SETTINGS_UI
 };
 
-export class Kavya extends Source {
-	stateManager = createSourceStateManager({});
+export class Kavya implements ChapterProviding, MangaProviding, SearchResultsProviding, MangaProgressProviding {
+	stateManager = App.createSourceStateManager();
 
 	cacheManager = new CacheManager();
 	interceptor = new KavitaRequestInterceptor(this.stateManager);
 	
-	requestManager = createRequestManager({
-		requestsPerSecond: 4,
+	requestManager = App.createRequestManager({
+		requestsPerSecond: 8,
 		requestTimeout: 20000,
 		interceptor: this.interceptor
 	});
 
-	override async getSourceMenu(): Promise<Section> {
-		return createSection({
+	async getSourceMenu(): Promise<DUISection> {
+		return App.createDUISection({
 			id: 'main',
 			header: 'Source Settings',
+			isHidden: false,
 			rows: async () => [
 				serverSettingsMenu(this.stateManager, this.interceptor)
 			],
 		});
 	}
 
-	async getMangaDetails(mangaId: string): Promise<Manga> {
-		return createManga({
-			...(await getSeriesDetails(mangaId, this.requestManager, this.stateManager))
+	async getMangaDetails(mangaId: string): Promise<SourceManga> {
+		return App.createSourceManga({
+			id: mangaId,
+			mangaInfo: App.createMangaInfo({
+				...(await getSeriesDetails(mangaId, this.requestManager, this.stateManager))
+			})
 		});
 	}
 
@@ -84,7 +95,7 @@ export class Kavya extends Source {
 		const kavitaAPI = await getKavitaAPI(this.stateManager);
 		const { displayReadInstedOfUnread } = await getOptions(this.stateManager);
 
-		const request = createRequestObject({
+		const request = App.createRequest({
 			url: `${kavitaAPI.url}/Series/volumes`,
 			param: `?seriesId=${mangaId}`,
 			method: 'GET',
@@ -126,13 +137,10 @@ export class Kavya extends Source {
 
 		chapters.sort(sortHelper);
 		return chapters.concat(specials).map((item, index) => {
-			const chapter = createChapter({
+			return App.createChapter({
 				...item,
-				chapNum: index // paperback sorts by chapNum when chapter is created, so we need to set it as index
+				sortingIndex: index
 			});
-
-			chapter.chapNum = item.chapNum; // revert to the original chapNum, to display it correctly
-			return chapter;
 		});
 	}
 
@@ -142,7 +150,7 @@ export class Kavya extends Source {
 	): Promise<ChapterDetails> {
 		const kavitaAPI = await getKavitaAPI(this.stateManager);
 
-		const request = createRequestObject({
+		const request = App.createRequest({
 			url: `${kavitaAPI.url}/Series/chapter`,
 			param: `?chapterId=${chapterId}`,
 			method: 'GET',
@@ -156,15 +164,14 @@ export class Kavya extends Source {
 			pages.push(`FAKE*/${i}?*REAL*${kavitaAPI.url}/Reader/image?chapterId=${chapterId}&page=${i}&apiKey=${kavitaAPI.key}&extractPdf=true`);
 		}
 
-		return createChapterDetails({
+		return App.createChapterDetails({
 			id: chapterId,
 			mangaId: mangaId,
-			pages: pages,
-			longStrip: false,
+			pages: pages
 		});
 	}
 
-	override async getSearchResults(
+	async getSearchResults(
 		searchQuery: SearchRequest,
 		// rome-ignore lint/suspicious/noExplicitAny: <explanation>
 		metadata: any
@@ -172,10 +179,9 @@ export class Kavya extends Source {
 		return await searchRequest(searchQuery, metadata, this.requestManager, this.interceptor, this.stateManager, this.cacheManager);
 	}
 
-	override async getSearchTags(): Promise<TagSection[]> {
+	async getSearchTags(): Promise<TagSection[]> {
 		// This function is also called when the user search in an other source. It should not throw if the server is unavailable.
 		if (!(await this.interceptor.isServerAvailable())) {
-			log('getSearchTags failed because server settings are invalid');
 			return [];
 		}
 
@@ -184,13 +190,13 @@ export class Kavya extends Source {
 
 		const includeLibraryIds: string[] = [];
 
-		const libraryRequest = createRequestObject({
+		const libraryRequest = App.createRequest({
 			url: `${kavitaAPI.url}/Library`,
 			method: 'GET',
 		});
 
 		const libraryResponse = await this.requestManager.schedule(libraryRequest, 1);
-		const libraryResult = JSON.parse(libraryResponse.data);
+		const libraryResult = JSON.parse(libraryResponse.data ?? '[]');
 
 		for (const library of libraryResult) {
 			if (excludeBookTypeLibrary && library.type === 2) continue;
@@ -204,7 +210,7 @@ export class Kavya extends Source {
 		const promises: Promise<void>[] = [];
 
 		for (const tagName of tagNames) {
-			const request = createRequestObject({
+			const request = App.createRequest({
 				url: `${kavitaAPI.url}/Metadata/${tagName}`,
 				param: `?libraryIds=${includeLibraryIds.join(',')}`,
 				method: 'GET',
@@ -212,7 +218,7 @@ export class Kavya extends Source {
 
 			promises.push(
 				this.requestManager.schedule(request, 1).then((response) => {
-					const result = JSON.parse(response.data);
+					const result = JSON.parse(response.data ?? '[]');
 
 					const names: string[] = [];
 					const tags: Tag[] = [];
@@ -223,15 +229,15 @@ export class Kavya extends Source {
 							case 'people':
 								if (!names.includes(item.name)) {
 									names.push(item.name);
-									tags.push(createTag({id: `${tagName}-${item.role}.${item.id}`, label: item.name}))
+									tags.push(App.createTag({id: `${tagName}-${item.role}.${item.id}`, label: item.name}))
 								}
 								break;
 							default:
-								tags.push(createTag({id: `${tagName}-${item.id}`, label: item.title}))
+								tags.push(App.createTag({id: `${tagName}-${item.id}`, label: item.title}))
 						}
 					});
 
-					tagSections[tagName] = createTagSection({
+					tagSections[tagName] = App.createTagSection({
 						id: tagName,
 						label: tagName,
 						tags: tags
@@ -244,18 +250,18 @@ export class Kavya extends Source {
 		return tagNames.map((tag) => tagSections[tag]);
 	}
 
-	override async getHomePageSections(
+	async getHomePageSections(
 		sectionCallback: (section: HomeSection) => void
 	): Promise<void> {
 		// This function is called on the homepage and should not throw if the server is unavailable
 		if (!(await this.interceptor.isServerAvailable())) {
-			log('getHomePageSections failed because server settings are invalid');
 			sectionCallback(
-				createHomeSection({ 
+				App.createHomeSection({ 
 					id: 'placeholder-id',
 					title: 'Library',
 					items: getServerUnavailableMangaTiles(),
-					view_more: false
+					containsMoreItems: false,
+					type: 'singleRowNormal'
 				})
 			);
 			return;
@@ -271,36 +277,39 @@ export class Kavya extends Source {
 		const sections = [];
 
 		if (showOnDeck) {
-			sections.push(createHomeSection({
+			sections.push(App.createHomeSection({
 				id: 'ondeck',
 				title: 'On Deck',
-				view_more: false,
+				containsMoreItems: false,
+				type: 'singleRowNormal'
 			}));
 		}
 
 		if (showRecentlyUpdated) {
-			sections.push(createHomeSection({
+			sections.push(App.createHomeSection({
 				id: 'recentlyupdated',
 				title: 'Recently Updated Series',
-				view_more: true,
+				containsMoreItems: false,
+				type: 'singleRowNormal'
 			}));
 		}
 
 		if (showNewlyAdded) {
-			sections.push(createHomeSection({
+			sections.push(App.createHomeSection({
 				id: 'newlyadded',
 				title: 'Newly Added Series',
-				view_more: true,
+				containsMoreItems: true,
+				type: 'singleRowNormal'
 			}));
 		}
 
-		const request = createRequestObject({
+		const request = App.createRequest({
 			url: `${kavitaAPI.url}/Library`,
 			method: 'GET',
 		});
 
 		const response = await this.requestManager.schedule(request, 1);
-		const result = JSON.parse(response.data);
+		const result = JSON.parse(response.data ?? '[]');
 
 		const excludeLibraryIds: number[] = [];
 		
@@ -310,10 +319,11 @@ export class Kavya extends Source {
 				continue;
 			}
 
-			sections.push(createHomeSection({
+			sections.push(App.createHomeSection({
 				id: `${library.id}`,
 				title: library.name,
-				view_more: true,
+				containsMoreItems: true,
+				type: 'singleRowNormal'
 			}));
 		}
 
@@ -342,7 +352,7 @@ export class Kavya extends Source {
 					break;
 			}
 			
-			const request = createRequestObject({
+			const request = App.createRequest({
 				url: apiPath,
 				data: JSON.stringify(body),
 				method: 'POST',
@@ -351,20 +361,21 @@ export class Kavya extends Source {
 			// Get the section data
 			promises.push(
 				this.requestManager.schedule(request, 1).then((response) => {
-					const result = JSON.parse(response.data);
+					const result = JSON.parse(response.data ?? '[]');
 					this.cacheManager.setCachedData(reqeustToString(request), result);
 
-					const tiles: MangaTile[] = [];
+					const tiles: PartialSourceManga[] = [];
 					
 					for (const series of result.slice(0, pageSize)) {
 						if (excludeBookTypeLibrary && excludeLibraryIds.includes(series.libraryId)) {
 							continue;
 						}
 
-						tiles.push(createMangaTile({
-							id: `${series[id]}`,
-							title: createIconText({text: series[title]}),
+						tiles.push(App.createPartialSourceManga({
+							title: series[title],
 							image: `${kavitaAPI.url}/image/series-cover?seriesId=${series[id]}&apiKey=${kavitaAPI.key}`,
+							mangaId: `${series[id]}`,
+							subtitle: undefined
 						}));
 					}
 					
@@ -378,7 +389,7 @@ export class Kavya extends Source {
 		await Promise.all(promises);
 	}
 
-	override async getViewMoreItems(
+	async getViewMoreItems(
 		homepageSectionId: string,
 		// rome-ignore lint/suspicious/noExplicitAny: <explanation>
 		metadata: any
@@ -407,7 +418,7 @@ export class Kavya extends Source {
 				break;
 		}
 
-		const request = createRequestObject({
+		const request = App.createRequest({
 			url: apiPath,
 			data: JSON.stringify(body),
 			method: 'POST'
@@ -419,26 +430,191 @@ export class Kavya extends Source {
 			result = this.cacheManager.getCachedData(reqeustToString(request));
 		} else {
 			const response = await this.requestManager.schedule(request, 1);
-			result = JSON.parse(response.data);
+			result = JSON.parse(response.data ?? '[]');
 
 			this.cacheManager.setCachedData(reqeustToString(request), result);
 		}
 
-		const tiles: MangaTile[] = [];
-		
+		const tiles: PartialSourceManga[] = [];
 		for (const series of result.slice(page * pageSize, (page + 1) * pageSize)) {
-			tiles.push(createMangaTile({
-				id: `${series[id]}`,
-				title: createIconText({text: series[title]}),
-				image: `${kavitaAPI.url}/image/series-cover?seriesId=${series[id]}&apiKey=${kavitaAPI.key}`
+			tiles.push(App.createPartialSourceManga({
+				title: series[title],
+				image: `${kavitaAPI.url}/image/series-cover?seriesId=${series[id]}&apiKey=${kavitaAPI.key}`,
+				mangaId: `${series[id]}`,
+				subtitle: undefined
 			}));
 		}
 
 		metadata = tiles.length === 0 ? undefined : { page: page + 1 };
-
-		return createPagedResults({
+		return App.createPagedResults({
 			results: tiles,
 			metadata: metadata
 		});
+	}
+
+	async getMangaProgress(mangaId: string): Promise<MangaProgress | undefined> {
+		const kavitaAPI = await getKavitaAPI(this.stateManager);
+		const request = App.createRequest({
+			url: `${kavitaAPI.url}/Series/volumes`,
+			param: `?seriesId=${mangaId}`,
+			method: 'GET',
+		});
+
+		const response = await this.requestManager.schedule(request, 1);
+		const result = typeof response.data === 'string' ? JSON.parse(response.data) : response.data;
+
+		// rome-ignore lint/suspicious/noExplicitAny: <explanation>
+		const chapters: any[] = [];
+		for (const volume of result) {
+			for (const chapter of volume.chapters) {
+				// rome-ignore lint/suspicious/noExplicitAny: <explanation>
+				const item: any = {
+					chapNum: parseFloat(chapter.number),
+					volume: volume.number,
+					time: new Date(chapter.lastReadingProgressUtc),
+					read: chapter.pagesRead === chapter.pages,
+				};
+				
+				if (!chapter.isSpecial) chapters.push(item);
+			}
+		}
+
+		chapters.sort(sortHelper);
+
+		let lastReadChapterNumber = 0;
+		let lastReadVolumeNumber = 0;
+		let lastReadTime = new Date(0);
+
+		for (const chapter of chapters) {
+			if (chapter.read) {
+				lastReadChapterNumber = chapter.chapNum;
+				lastReadVolumeNumber = chapter.volume;
+				lastReadTime = chapter.time;
+			} else {
+				break;
+			}
+		}
+		
+		return App.createMangaProgress({
+			mangaId: mangaId,
+			lastReadChapterNumber: lastReadChapterNumber,
+			lastReadVolumeNumber: lastReadVolumeNumber,
+			trackedListName: 'TEST',
+			lastReadTime: lastReadTime
+		});
+	}
+
+	async getMangaProgressManagementForm(mangaId: string): Promise<DUIForm> {
+		return App.createDUIForm({
+			sections: async () => {
+				const kavitaAPI = await getKavitaAPI(this.stateManager);
+
+				const request = App.createRequest({
+					url: `${kavitaAPI.url}/Series/${mangaId}`,
+					method: 'GET',
+				});
+				const response = await this.requestManager.schedule(request, 1);
+				const result = JSON.parse(response?.data ?? '{}');
+
+				return [
+					App.createDUISection({
+						id: 'seriesInfo',
+						header: 'Info',
+						isHidden: false,
+						rows: async () => [
+							App.createDUILabel({
+								id: 'seriesId',
+								label: 'SeriesID',
+								value: mangaId
+							}),
+							App.createDUILabel({
+								id: 'libraryId',
+								label: 'LibraryID',
+								value: `${result.libraryId}`
+							}),
+							App.createDUILabel({
+								id: 'pagesRead',
+								label: 'Pages Read',
+								value: `${result.pagesRead} / ${result.pages}`
+							})
+						]
+					}),
+					App.createDUISection({
+						id: 'userReview',
+						header: 'Rating & Review',
+						isHidden: false,
+						rows: async () => [
+							App.createDUIStepper({
+								id: 'rating',
+								label: 'Rating',
+								value: result.userRating ?? 0,
+								min: 0,
+								max: 5,
+								step: 1
+							}),
+							App.createDUIInputField({
+								id: 'review',
+								label: '',
+								value: result.userReview ?? '',
+							})
+						]
+					})
+				]
+			},
+			onSubmit: async (values) => {
+				const kavitaAPI = await getKavitaAPI(this.stateManager);
+
+				await this.requestManager.schedule(App.createRequest({
+                    url: `${kavitaAPI.url}/Series/update-rating`,
+					data: JSON.stringify({seriesId: mangaId, userRating: values.rating, userReview: values.review}),
+                    method: 'POST'
+                }), 1);
+			}
+		});
+	}
+
+	async processChapterReadActionQueue(actionQueue: TrackerActionQueue): Promise<void> {
+		const chapterReadActions = await actionQueue.queuedChapterReadActions();
+		const kavitaAPI = await getKavitaAPI(this.stateManager);
+
+		for (const readAction of chapterReadActions) {
+			if (!(await this.interceptor.isServerAvailable())) {
+				await actionQueue.retryChapterReadAction(readAction);
+				continue;
+			}
+
+			try {
+				const chapterRequest = App.createRequest({
+					url: `${kavitaAPI.url}/Reader/chapter-info`,
+					param: `?chapterId=${readAction.sourceChapterId}`,
+					method: 'GET',
+				});
+
+				const chapterResponse = await this.requestManager.schedule(chapterRequest, 1);
+				const chapterResult = JSON.parse(chapterResponse?.data ?? '{}');
+
+				const progressRequest = App.createRequest({
+					url: `${kavitaAPI.url}/Reader/progress`,
+					data: JSON.stringify({
+						volumeId: chapterResult.volumeId,
+						chapterId: parseInt(readAction.sourceChapterId),
+						pageNum: chapterResult.pages,
+						seriesId: chapterResult.seriesId,
+						libraryId: chapterResult.libraryId
+					}),
+					method: 'POST',
+				});
+
+				const progressResponse = await this.requestManager.schedule(progressRequest, 1);
+
+				if(progressResponse.status < 400) {
+					await actionQueue.discardChapterReadAction(readAction);
+				} else {
+					await actionQueue.retryChapterReadAction(readAction);
+				}
+			} catch(error) {
+				await actionQueue.retryChapterReadAction(readAction);
+			}
+		}
 	}
 }

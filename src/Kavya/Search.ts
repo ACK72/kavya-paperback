@@ -1,19 +1,18 @@
 import {
-	MangaTile,
+	PartialSourceManga,
 	Request,
 	RequestManager,
-	SearchRequest, 
+	SearchRequest,
 	SourceStateManager
-} from "paperback-extensions-common";
-import { CacheManager } from "./CacheManager";
+} from '@paperback/types';
+import { CacheManager } from './CacheManager';
 import {
 	KavitaRequestInterceptor,
 	getKavitaAPI,
 	getOptions,
 	getServerUnavailableMangaTiles,
-	searchRequestToString,
-	log
-} from "./Common";
+	searchRequestToString
+} from './Common';
 
 // rome-ignore lint/suspicious/noExplicitAny: <explanation>
 const KAVITA_PERSON_ROLES: any = {
@@ -42,9 +41,7 @@ export async function searchRequest(
 ) {
 	// This function is also called when the user search in an other source. It should not throw if the server is unavailable.
 	if (!(await interceptor.isServerAvailable())) {
-		log('searchRequest failed because server settings are invalid');
-
-		return createPagedResults({
+		return App.createPagedResults({
 			results: getServerUnavailableMangaTiles(),
 		});
 	}
@@ -56,13 +53,13 @@ export async function searchRequest(
 	const excludeLibraryIds: number[] = [];
 
 	if (excludeBookTypeLibrary) {
-		const request = createRequestObject({
+		const request = App.createRequest({
 			url: `${kavitaAPI.url}/Library`,
 			method: 'GET'
 		});
 
 		const response = await requestManager.schedule(request, 1);
-		const result = JSON.parse(response.data);
+		const result = JSON.parse(response.data ?? '[]');
 
 		for (const library of result) {
 			if (library.type === 2) {
@@ -73,8 +70,8 @@ export async function searchRequest(
 
 	const titleSearchIds: string[] = [];
 	
-	const tagSearchTiles: MangaTile[] = [];
-	const titleSearchTiles: MangaTile[] = [];
+	const tagSearchTiles: PartialSourceManga[] = [];
+	const titleSearchTiles: PartialSourceManga[] = [];
 
 	// rome-ignore lint/suspicious/noExplicitAny: <explanation>
 	let result: any;
@@ -82,7 +79,7 @@ export async function searchRequest(
 		result = cacheManager.getCachedData(searchRequestToString(searchQuery));
 	} else {
 		if (typeof searchQuery.title === 'string' && searchQuery.title !== '') {			
-			const titleRequest = createRequestObject({
+			const titleRequest = App.createRequest({
 				url: `${kavitaAPI.url}/Search/search`,
 				param: `?queryString=${encodeURIComponent(searchQuery.title)}`,
 				method: 'GET'
@@ -90,7 +87,7 @@ export async function searchRequest(
 	
 			// We don't want to throw if the server is unavailable
 			const titleResponse = await requestManager.schedule(titleRequest, 1);
-			const titleResult = JSON.parse(titleResponse.data);
+			const titleResult = JSON.parse(titleResponse.data ?? '[]');
 	
 			for (const manga of titleResult.series) {
 				if (excludeLibraryIds.includes(manga.libraryId)) {
@@ -99,10 +96,11 @@ export async function searchRequest(
 	
 				titleSearchIds.push(manga.seriesId);
 				titleSearchTiles.push(
-					createMangaTile({
-						id: `${manga.seriesId}`,
-						title: createIconText({text: manga.name}),
-						image: `${kavitaAPI.url}/image/series-cover?seriesId=${manga.seriesId}&apiKey=${kavitaAPI.key}`
+					App.createPartialSourceManga({
+						title: manga.name,
+						image: `${kavitaAPI.url}/image/series-cover?seriesId=${manga.seriesId}&apiKey=${kavitaAPI.key}`,
+						mangaId: `${manga.seriesId}`,
+						subtitle: undefined
 					})
 				);
 			}
@@ -116,14 +114,14 @@ export async function searchRequest(
 	
 						switch (tagName) {
 							case 'persons':
-								titleTagRequest = createRequestObject({
+								titleTagRequest = App.createRequest({
 									url: `${kavitaAPI.url}/Series/all`,
 									data: JSON.stringify({[KAVITA_PERSON_ROLES[item.role]]: [item.id]}),
 									method: 'POST'
 								});
 								break;
 							default:
-								titleTagRequest = createRequestObject({
+								titleTagRequest = App.createRequest({
 									url: `${kavitaAPI.url}/Series/all`,
 									data: JSON.stringify({[tagName]: [item.id]}),
 									method: 'POST'
@@ -131,16 +129,17 @@ export async function searchRequest(
 						}
 	
 						const titleTagResponse = await requestManager.schedule(titleTagRequest, 1);
-						const titleTagResult = JSON.parse(titleTagResponse.data);
+						const titleTagResult = JSON.parse(titleTagResponse.data ?? '[]');
 	
 						for (const manga of titleTagResult) {
 							if (!titleSearchIds.includes(manga.id)) {
 								titleSearchIds.push(manga.id);
 								titleSearchTiles.push(
-									createMangaTile({
-										id: `${manga.id}`,
-										title: createIconText({text: manga.name}),
-										image: `${kavitaAPI.url}/image/series-cover?seriesId=${manga.id}&apiKey=${kavitaAPI.key}`
+									App.createPartialSourceManga({
+										title: manga.name,
+										image: `${kavitaAPI.url}/image/series-cover?seriesId=${manga.id}&apiKey=${kavitaAPI.key}`,
+										mangaId: `${manga.id}`,
+										subtitle: undefined
 									})
 								);
 							}
@@ -167,13 +166,13 @@ export async function searchRequest(
 				}
 			});
 	
-			const peopleRequest = createRequestObject({
+			const peopleRequest = App.createRequest({
 				url: `${kavitaAPI.url}/Metadata/people`,
 				method: 'GET'
 			});
 	
 			const peopleResponse = await requestManager.schedule(peopleRequest, 1);
-			const peopleResult = JSON.parse(peopleResponse.data);
+			const peopleResult = JSON.parse(peopleResponse.data ?? '[]');
 	
 			for (const people of peopleResult) {
 				if (peopleTags.includes(people.name)) {
@@ -182,21 +181,22 @@ export async function searchRequest(
 				}
 			}
 			
-			const tagRequst = createRequestObject({
+			const tagRequst = App.createRequest({
 				url: `${kavitaAPI.url}/Series/all`,
 				data: JSON.stringify(body),
 				method: 'POST'
 			});
 	
 			const tagResponse = await requestManager.schedule(tagRequst, 1);
-			const tagResult = JSON.parse(tagResponse.data);
+			const tagResult = JSON.parse(tagResponse.data ?? '[]');
 	
 			for (const manga of tagResult) {
 				tagSearchTiles.push(
-					createMangaTile({
-						id: `${manga.id}`,
-						title: createIconText({text: manga.name}),
+					App.createPartialSourceManga({
+						title: manga.name,
 						image: `${kavitaAPI.url}/image/series-cover?seriesId=${manga.id}&apiKey=${kavitaAPI.key}`,
+						mangaId: `${manga.id}`,
+						subtitle: undefined
 					})
 				);
 			}
@@ -209,7 +209,7 @@ export async function searchRequest(
 	result = result.slice(page * pageSize, (page + 1) * pageSize);
 	metadata = result.length === 0 ? undefined : { page: page + 1 };
 
-	return createPagedResults({
+	return App.createPagedResults({
 		results: result,
 		metadata: metadata
 	});

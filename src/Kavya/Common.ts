@@ -1,28 +1,26 @@
 import {
-	MangaStatus,
 	Request,
-	RequestInterceptor,
 	RequestManager,
 	Response,
 	SearchRequest,
+	SourceInterceptor,
 	SourceStateManager,
 	Tag,
-	TagSection,
-} from 'paperback-extensions-common';
+	TagSection
+} from '@paperback/types';
 
+const KAVITA_PUBLICATION_STATUS: any = {
+	0: 'Ongoing',
+	1: 'Hiatus',
+	2: 'Completed',
+	3: 'Cancelled',
+	4: 'Ended',
+}
 
 //
 // Kavya Common Class & Methods
 //
-export const KAVITA_PUBLICATION_STATUS: MangaStatus[] = [
-	MangaStatus.ONGOING,
-	MangaStatus.HIATUS,
-	MangaStatus.COMPLETED,
-	MangaStatus.ABANDONED,
-	MangaStatus.COMPLETED
-];
-
-export class KavitaRequestInterceptor implements RequestInterceptor {
+export class KavitaRequestInterceptor implements SourceInterceptor {
 	stateManager: SourceStateManager;
 	authorization: string;
 
@@ -66,11 +64,11 @@ export class KavitaRequestInterceptor implements RequestInterceptor {
 export function getServerUnavailableMangaTiles() {
 	// This tile is used as a placeholder when the server is unavailable
 	return [
-		createMangaTile({
-			id: 'placeholder-id',
-			title: createIconText({ text: 'Server' }),
+		App.createPartialSourceManga({
+			title: 'Server',
 			image: '',
-			subtitleText: createIconText({ text: 'unavailable' }),
+			mangaId: 'placeholder-id',
+			subtitle: 'unavailable',
 		}),
 	];
 }
@@ -78,11 +76,11 @@ export function getServerUnavailableMangaTiles() {
 export async function getSeriesDetails(mangaId: string, requestManager: RequestManager, stateManager: SourceStateManager) {
 	const kavitaAPI = await getKavitaAPI(stateManager);
 
-	const seriesRequest = createRequestObject({
+	const seriesRequest = App.createRequest({
 		url: `${kavitaAPI.url}/Series/${mangaId}`,
 		method: 'GET',
 	});
-	const metadataRequest = createRequestObject({
+	const metadataRequest = App.createRequest({
 		url: `${kavitaAPI.url}/Series/metadata`,
 		param: `?seriesId=${mangaId}`,
 		method: 'GET',
@@ -106,30 +104,40 @@ export async function getSeriesDetails(mangaId: string, requestManager: RequestM
 		const tags: Tag[] = [];
 
 		for (const tag of metadataResult[tagName]) {
-			tags.push(createTag({
+			tags.push(App.createTag({
 				id: `${tagName}-${tag.id}`,
 				label: tag.title
 			}));
 		}
 
-		tagSections.push(createTagSection({
+		tagSections.push(App.createTagSection({
 			id: tagName,
 			label: tagName,
 			tags: tags
 		}));
 	}
 
+	let artists = [];
+	for (const penciller of metadataResult.pencillers) {
+		artists.push(penciller.name);
+	}
+
+	let authors = [];
+	for (const writer of metadataResult.writers) {
+		authors.push(writer.name);
+	}
+
 	return {
-		id: mangaId,
-		titles: [seriesResult.name],
 		image: `${kavitaAPI.url}/image/series-cover?seriesId=${mangaId}&apiKey=${kavitaAPI.key}`,
-		rating: seriesResult.userRating,
-		status: KAVITA_PUBLICATION_STATUS[metadataResult.publicationStatus] ?? MangaStatus.UNKNOWN,
-		artist: typeof metadataResult.pencillers[0] === 'undefined' ? '' : metadataResult.pencillers[0].name,
-		author: typeof metadataResult.writers[0] === 'undefined' ? '' : metadataResult.writers[0].name,
+		artist: artists.join(', '),
+		author: authors.join(', '),
 		desc: metadataResult.summary.replace(/<[^>]+>/g, ''),
+		status: KAVITA_PUBLICATION_STATUS[metadataResult.publicationStatus] ?? 'Unknown',
+		hentai: false,
+		titles: [seriesResult.name],
+		rating: seriesResult.userRating,
 		tags: tagSections,
-		lastUpdate: new Date(seriesResult.lastChapterAdded)
+		//additionalInfo: Record<string, string>
 	};
 }
 
@@ -177,11 +185,11 @@ export async function getKavitaAPI(stateManager: SourceStateManager): Promise<{u
 export async function getAuthorizationString(stateManager: SourceStateManager): Promise<string> {
 	const kavitaAPI = await getKavitaAPI(stateManager);
 
-	const manager = createRequestManager({
+	const manager = App.createRequestManager({
 		requestsPerSecond: 4,
-		requestTimeout: 20000
+		requestTimeout: 20_000
 	});
-	const request = createRequestObject({
+	const request = App.createRequest({
 		url: `${kavitaAPI.url}/Plugin/authenticate`,
 		param: `?apiKey=${kavitaAPI.key}&pluginName=Kavya`,
 		method: 'POST'
@@ -212,12 +220,4 @@ export async function getOptions(
 	const pageSize = (await stateManager.retrieve('pageSize') as number) ?? DEFAULT_VALUES.pageSize;
 
 	return { showOnDeck, showRecentlyUpdated, showNewlyAdded, excludeBookTypeLibrary, enableRecursiveSearch, displayReadInstedOfUnread, pageSize };
-}
-
-
-//
-// Kavya Logging Methods
-//
-export function log(message: string) {
-	console.log(`[Kavya] ${message}`);
 }

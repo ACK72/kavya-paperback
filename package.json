@@ -1,7 +1,7 @@
 {
 	"name": "extensions-main",
 	"repositoryName": "ACK72's Extensions",
-	"version": "1.2.9",
+	"version": "1.3.0",
 	"description": "ACK72's Paperback extension repository",
 	"main": "index.js",
 	"scripts": {
@@ -28,7 +28,7 @@
 		"typescript": "^4.9.5"
 	},
 	"dependencies": {
-		"paperback-cli": "^2.0.0-alpha.13",
-		"paperback-extensions-common": "^5.0.0-alpha.5"
+		"@paperback/toolchain": "^0.8.0-alpha.47",
+		"@paperback/types": "^0.8.0-alpha.47"
 	}
 }
