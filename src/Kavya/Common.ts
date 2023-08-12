@@ -165,14 +165,15 @@ export const DEFAULT_VALUES: any = {
 	kavitaAddress: 'https://demo.kavitareader.com',
 	kavitaAPIUrl: 'https://demo.kavitareader.com/api',
 	kavitaAPIKey: '',
+	pageSize: 40,
 
 	showOnDeck: true,
 	showRecentlyUpdated: true,
 	showNewlyAdded: true,
 	excludeBookTypeLibrary: false,
+	
 	enableRecursiveSearch: false,
-	displayReadInstedOfUnread: true,
-	pageSize: 40
+	useAlternativeAPI: false
 }
 
 export async function getKavitaAPI(stateManager: SourceStateManager): Promise<{url: string, key: string}> {
@@ -186,8 +187,8 @@ export async function getAuthorizationString(stateManager: SourceStateManager): 
 	const kavitaAPI = await getKavitaAPI(stateManager);
 
 	const manager = App.createRequestManager({
-		requestsPerSecond: 4,
-		requestTimeout: 20_000
+		requestsPerSecond: 8,
+		requestTimeout: 20000
 	});
 	const request = App.createRequest({
 		url: `${kavitaAPI.url}/Plugin/authenticate`,
@@ -203,21 +204,22 @@ export async function getAuthorizationString(stateManager: SourceStateManager): 
 export async function getOptions(
 	stateManager: SourceStateManager
 ): Promise<{
+	pageSize: number;
 	showOnDeck: boolean;
 	showRecentlyUpdated: boolean;
 	showNewlyAdded: boolean;
 	excludeBookTypeLibrary: boolean;
 	enableRecursiveSearch: boolean;
-	displayReadInstedOfUnread: boolean;
-	pageSize: number;
+	useAlternativeAPI: boolean;
 }> {
+	const pageSize = (await stateManager.retrieve('pageSize') as number) ?? DEFAULT_VALUES.pageSize;
 	const showOnDeck = (await stateManager.retrieve('showOnDeck') as boolean) ?? DEFAULT_VALUES.showOnDeck;
 	const showRecentlyUpdated = (await stateManager.retrieve('showRecentlyUpdated') as boolean) ?? DEFAULT_VALUES.showRecentlyUpdated;
 	const showNewlyAdded = (await stateManager.retrieve('showNewlyAdded') as boolean) ?? DEFAULT_VALUES.showNewlyAdded;
 	const excludeBookTypeLibrary = (await stateManager.retrieve('excludeBookTypeLibrary') as boolean) ?? DEFAULT_VALUES.excludeBookTypeLibrary;
-	const enableRecursiveSearch = (await stateManager.retrieve('enableRecursiveSearch') as boolean) ?? DEFAULT_VALUES.enableRecursiveSearch;
-	const displayReadInstedOfUnread = (await stateManager.retrieve('displayReadInstedOfUnread') as boolean) ?? DEFAULT_VALUES.displayReadInstedOfUnread;
-	const pageSize = (await stateManager.retrieve('pageSize') as number) ?? DEFAULT_VALUES.pageSize;
 
-	return { showOnDeck, showRecentlyUpdated, showNewlyAdded, excludeBookTypeLibrary, enableRecursiveSearch, displayReadInstedOfUnread, pageSize };
+	const enableRecursiveSearch = (await stateManager.retrieve('enableRecursiveSearch') as boolean) ?? DEFAULT_VALUES.enableRecursiveSearch;
+	const useAlternativeAPI = (await stateManager.retrieve('useAlternativeAPI') as boolean) ?? DEFAULT_VALUES.useAlternativeAPI;
+
+	return { pageSize, showOnDeck, showRecentlyUpdated, showNewlyAdded, excludeBookTypeLibrary, enableRecursiveSearch, useAlternativeAPI };
 }

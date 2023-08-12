@@ -74,10 +74,8 @@ export async function searchRequest(
 	const titleSearchTiles: PartialSourceManga[] = [];
 
 	// rome-ignore lint/suspicious/noExplicitAny: <explanation>
-	let result: any;
-	if (cacheManager.getCachedData(searchRequestToString(searchQuery)) !== undefined) {
-		result = cacheManager.getCachedData(searchRequestToString(searchQuery));
-	} else {
+	let result: any = cacheManager.getCachedData(searchRequestToString(searchQuery));
+	if (result === undefined) {
 		if (typeof searchQuery.title === 'string' && searchQuery.title !== '') {			
 			const titleRequest = App.createRequest({
 				url: `${kavitaAPI.url}/Search/search`,

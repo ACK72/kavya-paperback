@@ -136,8 +136,8 @@ export const serverSettingsMenu = (
 					]),
 				}),
 				App.createDUISection({
-					id: "searchOptions",
-					header: "Search Options",
+					id: "experimentalOptions",
+					header: "Experimental Options",
 					isHidden: false,
 					footer: "",
 					rows: async () => retrieveStateData(stateManager).then((values) => [
@@ -153,24 +153,16 @@ export const serverSettingsMenu = (
 									await setStateData(stateManager, interceptor, values);
 								}
 							})
-						})
-					]),
-				}),
-				App.createDUISection({
-					id: "miscellaneous",
-					header: "MISCELLANEOUS",
-					isHidden: false,
-					footer: "",
-					rows: async () => retrieveStateData(stateManager).then((values) => [
+						}),
 						App.createDUISwitch({
-							id: 'displayReadInstedOfUnread',
-							label: 'Display Status With Read Instead Of Unread',
+							id: 'useAlternativeAPI',
+							label: 'Use Alternative API',
 							value: App.createDUIBinding({
 								async get() {
-									return values.displayReadInstedOfUnread;
+									return values.useAlternativeAPI;
 								},
 								async set(value) {
-									values.displayReadInstedOfUnread = value;
+									values.useAlternativeAPI = value;
 									await setStateData(stateManager, interceptor, values);
 								}
 							})
@@ -185,16 +177,17 @@ export const serverSettingsMenu = (
 export async function retrieveStateData(stateManager: SourceStateManager) {
 	const kavitaAddress = (await stateManager.retrieve('kavitaAddress') as string) ?? DEFAULT_VALUES.kavitaAddress;
 	const kavitaAPIKey = (await stateManager.keychain.retrieve('kavitaAPIKey') as string) ?? DEFAULT_VALUES.kavitaAPIKey;
+	const pageSize = (await stateManager.retrieve('pageSize') as number) ?? DEFAULT_VALUES.pageSize;
 
 	const showOnDeck = (await stateManager.retrieve('showOnDeck') as boolean) ?? DEFAULT_VALUES.showOnDeck;
 	const showRecentlyUpdated = (await stateManager.retrieve('showRecentlyUpdated') as boolean) ?? DEFAULT_VALUES.showRecentlyUpdated;
 	const showNewlyAdded = (await stateManager.retrieve('showNewlyAdded') as boolean) ?? DEFAULT_VALUES.showNewlyAdded;
 	const excludeBookTypeLibrary = (await stateManager.retrieve('excludeBookTypeLibrary') as boolean) ?? DEFAULT_VALUES.excludeBookTypeLibrary;
-	const enableRecursiveSearch = (await stateManager.retrieve('enableRecursiveSearch') as boolean) ?? DEFAULT_VALUES.enableRecursiveSearch;
-	const displayReadInstedOfUnread = (await stateManager.retrieve('displayReadInstedOfUnread') as boolean) ?? DEFAULT_VALUES.displayReadInstedOfUnread;
-	const pageSize = (await stateManager.retrieve('pageSize') as number) ?? DEFAULT_VALUES.pageSize;
 
-	return { kavitaAddress, kavitaAPIKey, showOnDeck, showRecentlyUpdated, showNewlyAdded, excludeBookTypeLibrary, enableRecursiveSearch, displayReadInstedOfUnread, pageSize }
+	const enableRecursiveSearch = (await stateManager.retrieve('enableRecursiveSearch') as boolean) ?? DEFAULT_VALUES.enableRecursiveSearch;
+	const useAlternativeAPI = (await stateManager.retrieve('useAlternativeAPI') as boolean) ?? DEFAULT_VALUES.useAlternativeAPI;
+
+	return { kavitaAddress, kavitaAPIKey, pageSize, showOnDeck, showRecentlyUpdated, showNewlyAdded, excludeBookTypeLibrary, enableRecursiveSearch, useAlternativeAPI }
 }
 
 // rome-ignore lint/suspicious/noExplicitAny: <explanation>
@@ -208,18 +201,15 @@ export async function setStateData(stateManager: SourceStateManager, interceptor
 	promises.push(stateManager.store('kavitaAPIUrl', apiUri + (apiUri.slice(-1) === '/' ? 'api' : '/api')));
 	promises.push(stateManager.keychain.store('kavitaAPIKey', data['kavitaAPIKey'] ?? DEFAULT_VALUES.kavitaAPIKey));
 	promises.push(stateManager.store('pageSize', pageSize));
-	
-	await Promise.all(promises);
-	await interceptor.updateAuthorization();
-
-	promises = [];
 
 	promises.push(stateManager.store('showOnDeck', data['showOnDeck'] ?? DEFAULT_VALUES.showOnDeck));
 	promises.push(stateManager.store('showRecentlyUpdated', data['showRecentlyUpdated'] ?? DEFAULT_VALUES.showRecentlyUpdated));
 	promises.push(stateManager.store('showNewlyAdded', data['showNewlyAdded'] ?? DEFAULT_VALUES.showNewlyAdded));
 	promises.push(stateManager.store('excludeBookTypeLibrary', data['excludeBookTypeLibrary'] ?? DEFAULT_VALUES.excludeBookTypeLibrary));
+
 	promises.push(stateManager.store('enableRecursiveSearch', data['enableRecursiveSearch'] ?? DEFAULT_VALUES.enableRecursiveSearch));
-	promises.push(stateManager.store('displayReadInstedOfUnread', data['displayReadInstedOfUnread'] ?? DEFAULT_VALUES.displayReadInstedOfUnread));
+	promises.push(stateManager.store('useAlternativeAPI', data['useAlternativeAPI'] ?? DEFAULT_VALUES.useAlternativeAPI));
 	
 	await Promise.all(promises);
+	await interceptor.updateAuthorization();
 }
