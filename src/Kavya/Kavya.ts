@@ -44,7 +44,7 @@ const sortHelper = (a: any, b: any) => {
 }
 
 export const KavyaInfo: SourceInfo = {
-	version: '1.3.2',
+	version: '1.3.3',
 	name: 'Kavya',
 	icon: 'icon.png',
 	author: 'ACK72',
