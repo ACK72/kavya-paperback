@@ -483,7 +483,9 @@ class CacheManager {
     }
     // rome-ignore lint/suspicious/noExplicitAny: <explanation>
     setCachedData(str, data) {
-        this.cachedData[this.getHash(str)] = { time: new Date(), data: data };
+        const hash = this.getHash(str);
+        let cacheTime = this.cachedData[hash]?.time ?? new Date();
+        this.cachedData[hash] = { time: cacheTime, data: data };
     }
 }
 exports.CacheManager = CacheManager;
@@ -491,7 +493,7 @@ exports.CacheManager = CacheManager;
 },{}],63:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getOptions = exports.getAuthorizationString = exports.getKavitaAPI = exports.DEFAULT_VALUES = exports.searchRequestToString = exports.reqeustToString = exports.getSeriesDetails = exports.getServerUnavailableMangaTiles = exports.KavitaRequestInterceptor = void 0;
+exports.getOptions = exports.getAuthorization = exports.getKavitaAPI = exports.DEFAULT_VALUES = exports.searchRequestToString = exports.reqeustToString = exports.getSeriesDetails = exports.getServerUnavailableMangaTiles = exports.KavitaRequestInterceptor = void 0;
 const KAVITA_PUBLICATION_STATUS = {
     0: 'Ongoing',
     1: 'Hiatus',
@@ -508,13 +510,17 @@ class KavitaRequestInterceptor {
         this.authorization = '';
     }
     async isServerAvailable() {
-        if (this.authorization === '') {
-            await this.updateAuthorization();
-        }
+        await this.getAuthorizationString();
         return this.authorization.startsWith('Bearer ');
     }
-    async updateAuthorization() {
-        this.authorization = await getAuthorizationString(this.stateManager);
+    async getAuthorizationString() {
+        if (this.authorization === '') {
+            this.authorization = await getAuthorization(this.stateManager);
+        }
+        return this.authorization;
+    }
+    clearAuthorizationString() {
+        this.authorization = '';
     }
     async interceptResponse(response) {
         return response;
@@ -523,7 +529,7 @@ class KavitaRequestInterceptor {
         request.headers = {
             ...request.headers,
             ...(typeof request.data === 'string' ? { 'Content-Type': 'application/json' } : {}),
-            'Authorization': this.authorization
+            'Authorization': await this.getAuthorizationString()
         };
         if (request.url.startsWith('FAKE*')) {
             request.url = request.url.split('*REAL*').pop() ?? '';
@@ -637,7 +643,7 @@ async function getKavitaAPI(stateManager) {
     return { url: kavitaAPIUrl, key: kavitaAPIKey };
 }
 exports.getKavitaAPI = getKavitaAPI;
-async function getAuthorizationString(stateManager) {
+async function getAuthorization(stateManager) {
     const kavitaAPI = await getKavitaAPI(stateManager);
     const manager = App.createRequestManager({
         requestsPerSecond: 8,
@@ -652,7 +658,7 @@ async function getAuthorizationString(stateManager) {
     const token = typeof response.data === 'string' ? JSON.parse(response.data).token : undefined;
     return token ? `Bearer ${token}` : '';
 }
-exports.getAuthorizationString = getAuthorizationString;
+exports.getAuthorization = getAuthorization;
 async function getOptions(stateManager) {
     const pageSize = await stateManager.retrieve('pageSize') ?? exports.DEFAULT_VALUES.pageSize;
     const showOnDeck = await stateManager.retrieve('showOnDeck') ?? exports.DEFAULT_VALUES.showOnDeck;
@@ -681,7 +687,7 @@ const sortHelper = (a, b) => {
     return a.volume === 0 || b.volume === 0 ? b.volume - a.volume : a.volume - b.volume;
 };
 exports.KavyaInfo = {
-    version: '1.3.2',
+    version: '1.3.3',
     name: 'Kavya',
     icon: 'icon.png',
     author: 'ACK72',
@@ -695,7 +701,7 @@ exports.KavyaInfo = {
             type: types_1.BadgeColor.GREEN,
         },
     ],
-    intents: types_1.SourceIntents.HOMEPAGE_SECTIONS | types_1.SourceIntents.MANGA_CHAPTERS | types_1.SourceIntents.MANGA_TRACKING | types_1.SourceIntents.SETTINGS_UI
+    intents: types_1.SourceIntents.COLLECTION_MANAGEMENT | types_1.SourceIntents.HOMEPAGE_SECTIONS | types_1.SourceIntents.MANGA_CHAPTERS | types_1.SourceIntents.MANGA_TRACKING | types_1.SourceIntents.SETTINGS_UI
 };
 class Kavya {
     constructor() {
@@ -923,18 +929,21 @@ class Kavya {
             let apiPath, body = {}, id = 'id', title = 'name';
             switch (section.id) {
                 case 'ondeck':
-                    apiPath = `${kavitaAPI.url}/Series/on-deck?PageNumber=0&PageSize=${pageSize}`;
+                    apiPath = `${kavitaAPI.url}/Series/on-deck?PageNumber=1&PageSize=${pageSize}`;
                     break;
                 case 'recentlyupdated':
                     apiPath = `${kavitaAPI.url}/Series/recently-updated-series`;
                     id = 'seriesId', title = 'seriesName';
                     break;
                 case 'newlyadded':
-                    apiPath = `${kavitaAPI.url}/Series/recently-added-v2?PageNumber=0&PageSize=${pageSize}`;
+                    if (useAlternativeAPI)
+                        apiPath = `${kavitaAPI.url}/Series/recently-added-v2?PageNumber=1&PageSize=${pageSize}`;
+                    else
+                        apiPath = `${kavitaAPI.url}/Series/recently-added?PageNumber=1&PageSize=${pageSize}`;
                     break;
                 default:
                     if (useAlternativeAPI) {
-                        apiPath = `${kavitaAPI.url}/Series/v2?PageNumber=0&PageSize=${pageSize}`;
+                        apiPath = `${kavitaAPI.url}/Series/v2?PageNumber=1&PageSize=${pageSize}`;
                         body = {
                             statements: [{ comparison: 0, field: 19, value: section.id }],
                             combination: 1,
@@ -943,7 +952,7 @@ class Kavya {
                         };
                     }
                     else {
-                        apiPath = `${kavitaAPI.url}/Series/all?PageNumber=0&PageSize=${pageSize}&libraryId=${section.id}`;
+                        apiPath = `${kavitaAPI.url}/Series/all?PageNumber=1&PageSize=${pageSize}&libraryId=${section.id}`;
                     }
                     break;
             }
@@ -998,7 +1007,10 @@ class Kavya {
                 useBuiltInCache = true;
                 break;
             case 'newlyadded':
-                apiPath = `${kavitaAPI.url}/Series/recently-added-v2?PageNumber=${page}&PageSize=${pageSize}`;
+                if (useAlternativeAPI)
+                    apiPath = `${kavitaAPI.url}/Series/recently-added-v2?PageNumber=${page}&PageSize=${pageSize}`;
+                else
+                    apiPath = `${kavitaAPI.url}/Series/recently-added?PageNumber=${page}&PageSize=${pageSize}`;
                 checkLibraryId = true;
                 break;
             default:
@@ -1032,7 +1044,7 @@ class Kavya {
         }
         if (useBuiltInCache) {
             this.cacheManager.setCachedData((0, Common_1.reqeustToString)(request), result);
-            result = result.slice(page * pageSize, (page + 1) * pageSize);
+            result = result.slice((page - 1) * pageSize, page * pageSize);
         }
         if (checkLibraryId) {
             const libraryRequest = App.createRequest({
@@ -1567,21 +1579,33 @@ async function retrieveStateData(stateManager) {
 exports.retrieveStateData = retrieveStateData;
 // rome-ignore lint/suspicious/noExplicitAny: <explanation>
 async function setStateData(stateManager, interceptor, data) {
-    const apiUri = data['kavitaAddress'] ?? Common_1.DEFAULT_VALUES.kavitaAddress;
-    const pageSize = typeof data['pageSize'] === 'string' ? parseInt(data['pageSize']) === 0 ? Common_1.DEFAULT_VALUES.pageSize : parseInt(data['pageSize']) : Common_1.DEFAULT_VALUES.pageSize;
-    let promises = [];
-    promises.push(stateManager.store('kavitaAddress', apiUri));
-    promises.push(stateManager.store('kavitaAPIUrl', apiUri + (apiUri.slice(-1) === '/' ? 'api' : '/api')));
-    promises.push(stateManager.keychain.store('kavitaAPIKey', data['kavitaAPIKey'] ?? Common_1.DEFAULT_VALUES.kavitaAPIKey));
-    promises.push(stateManager.store('pageSize', pageSize));
-    promises.push(stateManager.store('showOnDeck', data['showOnDeck'] ?? Common_1.DEFAULT_VALUES.showOnDeck));
-    promises.push(stateManager.store('showRecentlyUpdated', data['showRecentlyUpdated'] ?? Common_1.DEFAULT_VALUES.showRecentlyUpdated));
-    promises.push(stateManager.store('showNewlyAdded', data['showNewlyAdded'] ?? Common_1.DEFAULT_VALUES.showNewlyAdded));
-    promises.push(stateManager.store('excludeBookTypeLibrary', data['excludeBookTypeLibrary'] ?? Common_1.DEFAULT_VALUES.excludeBookTypeLibrary));
-    promises.push(stateManager.store('enableRecursiveSearch', data['enableRecursiveSearch'] ?? Common_1.DEFAULT_VALUES.enableRecursiveSearch));
-    promises.push(stateManager.store('useAlternativeAPI', data['useAlternativeAPI'] ?? Common_1.DEFAULT_VALUES.useAlternativeAPI));
+    const promises = [];
+    const prevStateData = await retrieveStateData(stateManager);
+    let clear = false;
+    for (const [key, value] of Object.entries(data)) {
+        if (prevStateData[key] !== value) {
+            switch (key) {
+                case 'kavitaAddress':
+                    promises.push(stateManager.store(key, value));
+                    promises.push(stateManager.store('kavitaAPIUrl', value + (value.slice(-1) === '/' ? 'api' : '/api')));
+                    clear = true;
+                    break;
+                case 'kavitaAPIKey':
+                    promises.push(stateManager.keychain.store(key, value));
+                    clear = true;
+                    break;
+                case 'pageSize':
+                    const pageSize = typeof value === 'string' ? parseInt(value) === 0 ? Common_1.DEFAULT_VALUES.pageSize : parseInt(value) : Common_1.DEFAULT_VALUES.pageSize;
+                    promises.push(stateManager.store(key, pageSize));
+                    break;
+                default:
+                    promises.push(stateManager.store(key, value));
+            }
+        }
+    }
     await Promise.all(promises);
-    await interceptor.updateAuthorization();
+    if (clear)
+        interceptor.clearAuthorizationString();
 }
 exports.setStateData = setStateData;
 
