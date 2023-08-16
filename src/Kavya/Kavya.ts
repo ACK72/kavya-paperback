@@ -58,7 +58,7 @@ export const KavyaInfo: SourceInfo = {
 			type: BadgeColor.GREEN,
 		},
 	],
-	intents: SourceIntents.HOMEPAGE_SECTIONS | SourceIntents.MANGA_CHAPTERS | SourceIntents.MANGA_TRACKING | SourceIntents.SETTINGS_UI
+	intents: SourceIntents.COLLECTION_MANAGEMENT | SourceIntents.HOMEPAGE_SECTIONS | SourceIntents.MANGA_CHAPTERS | SourceIntents.MANGA_TRACKING | SourceIntents.SETTINGS_UI
 };
 
 export class Kavya implements ChapterProviding, HomePageSectionsProviding, MangaProgressProviding, MangaProviding, RequestManagerProviding, SearchResultsProviding {
@@ -339,18 +339,19 @@ export class Kavya implements ChapterProviding, HomePageSectionsProviding, Manga
 			let apiPath: string, body: any = {}, id: string = 'id', title: string = 'name';
 			switch (section.id) {
 				case 'ondeck':
-					apiPath = `${kavitaAPI.url}/Series/on-deck?PageNumber=0&PageSize=${pageSize}`;
+					apiPath = `${kavitaAPI.url}/Series/on-deck?PageNumber=1&PageSize=${pageSize}`;
 					break;
 				case 'recentlyupdated':
 					apiPath = `${kavitaAPI.url}/Series/recently-updated-series`;
 					id = 'seriesId', title = 'seriesName';
 					break;
 				case 'newlyadded':
-					apiPath = `${kavitaAPI.url}/Series/recently-added-v2?PageNumber=0&PageSize=${pageSize}`;
+					if (useAlternativeAPI) apiPath = `${kavitaAPI.url}/Series/recently-added-v2?PageNumber=1&PageSize=${pageSize}`;
+					else apiPath = `${kavitaAPI.url}/Series/recently-added?PageNumber=1&PageSize=${pageSize}`;
 					break;
 				default:
 					if (useAlternativeAPI) {
-						apiPath = `${kavitaAPI.url}/Series/v2?PageNumber=0&PageSize=${pageSize}`;
+						apiPath = `${kavitaAPI.url}/Series/v2?PageNumber=1&PageSize=${pageSize}`;
 						body = {
 							statements: [{ comparison: 0, field: 19, value: section.id }],
 							combination: 1,
@@ -358,7 +359,7 @@ export class Kavya implements ChapterProviding, HomePageSectionsProviding, Manga
 							limitTo: 0
 						};
 					} else {
-						apiPath = `${kavitaAPI.url}/Series/all?PageNumber=0&PageSize=${pageSize}&libraryId=${section.id}`;
+						apiPath = `${kavitaAPI.url}/Series/all?PageNumber=1&PageSize=${pageSize}&libraryId=${section.id}`;
 					}
 					break;
 			}
@@ -423,7 +424,8 @@ export class Kavya implements ChapterProviding, HomePageSectionsProviding, Manga
 				useBuiltInCache = true;
 				break;
 			case 'newlyadded':
-				apiPath = `${kavitaAPI.url}/Series/recently-added-v2?PageNumber=${page}&PageSize=${pageSize}`;
+				if (useAlternativeAPI) apiPath = `${kavitaAPI.url}/Series/recently-added-v2?PageNumber=${page}&PageSize=${pageSize}`;
+				else apiPath = `${kavitaAPI.url}/Series/recently-added?PageNumber=${page}&PageSize=${pageSize}`;
 				checkLibraryId = true;
 				break;
 			default:
@@ -460,7 +462,7 @@ export class Kavya implements ChapterProviding, HomePageSectionsProviding, Manga
 
 		if (useBuiltInCache) {
 			this.cacheManager.setCachedData(reqeustToString(request), result);
-			result = result.slice(page * pageSize, (page + 1) * pageSize);
+			result = result.slice((page - 1) * pageSize, page * pageSize);
 		}
 
 		if (checkLibraryId) {

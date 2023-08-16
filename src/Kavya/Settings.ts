@@ -192,24 +192,32 @@ export async function retrieveStateData(stateManager: SourceStateManager) {
 
 // rome-ignore lint/suspicious/noExplicitAny: <explanation>
 export async function setStateData(stateManager: SourceStateManager, interceptor: KavitaRequestInterceptor, data: Record<string, any>) {
-	const apiUri = data['kavitaAddress'] ?? DEFAULT_VALUES.kavitaAddress;
-	const pageSize = typeof data['pageSize'] === 'string' ? parseInt(data['pageSize']) === 0 ? DEFAULT_VALUES.pageSize : parseInt(data['pageSize']) : DEFAULT_VALUES.pageSize;
+	const promises: Promise<void>[] = [];
+	const prevStateData: any = await retrieveStateData(stateManager);
 
-	let promises: Promise<void>[] = [];
-
-	promises.push(stateManager.store('kavitaAddress', apiUri));
-	promises.push(stateManager.store('kavitaAPIUrl', apiUri + (apiUri.slice(-1) === '/' ? 'api' : '/api')));
-	promises.push(stateManager.keychain.store('kavitaAPIKey', data['kavitaAPIKey'] ?? DEFAULT_VALUES.kavitaAPIKey));
-	promises.push(stateManager.store('pageSize', pageSize));
-
-	promises.push(stateManager.store('showOnDeck', data['showOnDeck'] ?? DEFAULT_VALUES.showOnDeck));
-	promises.push(stateManager.store('showRecentlyUpdated', data['showRecentlyUpdated'] ?? DEFAULT_VALUES.showRecentlyUpdated));
-	promises.push(stateManager.store('showNewlyAdded', data['showNewlyAdded'] ?? DEFAULT_VALUES.showNewlyAdded));
-	promises.push(stateManager.store('excludeBookTypeLibrary', data['excludeBookTypeLibrary'] ?? DEFAULT_VALUES.excludeBookTypeLibrary));
-
-	promises.push(stateManager.store('enableRecursiveSearch', data['enableRecursiveSearch'] ?? DEFAULT_VALUES.enableRecursiveSearch));
-	promises.push(stateManager.store('useAlternativeAPI', data['useAlternativeAPI'] ?? DEFAULT_VALUES.useAlternativeAPI));
+	let clear = false;
+	for (const [key, value] of Object.entries(data)) {
+		if (prevStateData[key] !== value) {
+			switch (key) {
+				case 'kavitaAddress':
+					promises.push(stateManager.store(key, value));
+					promises.push(stateManager.store('kavitaAPIUrl', value + (value.slice(-1) === '/' ? 'api' : '/api')));
+					clear = true;
+					break;
+				case 'kavitaAPIKey':
+					promises.push(stateManager.keychain.store(key, value));
+					clear = true;
+					break;
+				case 'pageSize':
+					const pageSize = typeof value === 'string' ? parseInt(value) === 0 ? DEFAULT_VALUES.pageSize : parseInt(value) : DEFAULT_VALUES.pageSize;
+					promises.push(stateManager.store(key, pageSize));
+					break;
+				default:
+					promises.push(stateManager.store(key, value));
+			}
+		}
+	}
 	
 	await Promise.all(promises);
-	await interceptor.updateAuthorization();
+	if (clear) interceptor.clearAuthorizationString();
 }

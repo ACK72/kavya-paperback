@@ -34,6 +34,8 @@ export class CacheManager {
 
 	// rome-ignore lint/suspicious/noExplicitAny: <explanation>
 	setCachedData(str: string, data: any) {
-		this.cachedData[this.getHash(str)] = { time: new Date(), data: data };
+		const hash = this.getHash(str);
+		let cacheTime = this.cachedData[hash]?.time ?? new Date();
+		this.cachedData[hash] = { time: cacheTime, data: data };
 	}
 }

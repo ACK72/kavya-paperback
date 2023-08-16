@@ -30,15 +30,20 @@ export class KavitaRequestInterceptor implements SourceInterceptor {
 	}
 
 	async isServerAvailable(): Promise<boolean> {
-		if (this.authorization === '') {
-			await this.updateAuthorization();
-		}
-
+		await this.getAuthorizationString();
 		return this.authorization.startsWith('Bearer ');
 	}
 
-	async updateAuthorization(): Promise<void> {
-		this.authorization = await getAuthorizationString(this.stateManager);
+	async getAuthorizationString(): Promise<string> {
+		if (this.authorization === '') {
+			this.authorization = await getAuthorization(this.stateManager);
+		}
+
+		return this.authorization;
+	}
+
+	clearAuthorizationString(): void {
+		this.authorization = '';
 	}
 
 	async interceptResponse(response: Response): Promise<Response> {
@@ -46,11 +51,12 @@ export class KavitaRequestInterceptor implements SourceInterceptor {
 	}
 
 	async interceptRequest(request: Request): Promise<Request> {
+
 		request.headers = {
 			...request.headers,
 			...(typeof request.data === 'string' ? { 'Content-Type': 'application/json' } : {}),
 
-			'Authorization': this.authorization
+			'Authorization': await this.getAuthorizationString()
 		}
 
 		if (request.url.startsWith('FAKE*')) {
@@ -183,9 +189,8 @@ export async function getKavitaAPI(stateManager: SourceStateManager): Promise<{u
 	return {url: kavitaAPIUrl, key: kavitaAPIKey};
 }
 
-export async function getAuthorizationString(stateManager: SourceStateManager): Promise<string> {
+export async function getAuthorization(stateManager: SourceStateManager): Promise<string> {
 	const kavitaAPI = await getKavitaAPI(stateManager);
-
 	const manager = App.createRequestManager({
 		requestsPerSecond: 8,
 		requestTimeout: 20000
