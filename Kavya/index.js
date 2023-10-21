@@ -634,8 +634,7 @@ exports.DEFAULT_VALUES = {
     showRecentlyUpdated: true,
     showNewlyAdded: true,
     excludeBookTypeLibrary: false,
-    enableRecursiveSearch: false,
-    useAlternativeAPI: false
+    enableRecursiveSearch: false
 };
 async function getKavitaAPI(stateManager) {
     const kavitaAPIUrl = await stateManager.retrieve('kavitaAPIUrl') ?? exports.DEFAULT_VALUES.kavitaAPIUrl;
@@ -666,8 +665,7 @@ async function getOptions(stateManager) {
     const showNewlyAdded = await stateManager.retrieve('showNewlyAdded') ?? exports.DEFAULT_VALUES.showNewlyAdded;
     const excludeBookTypeLibrary = await stateManager.retrieve('excludeBookTypeLibrary') ?? exports.DEFAULT_VALUES.excludeBookTypeLibrary;
     const enableRecursiveSearch = await stateManager.retrieve('enableRecursiveSearch') ?? exports.DEFAULT_VALUES.enableRecursiveSearch;
-    const useAlternativeAPI = await stateManager.retrieve('useAlternativeAPI') ?? exports.DEFAULT_VALUES.useAlternativeAPI;
-    return { pageSize, showOnDeck, showRecentlyUpdated, showNewlyAdded, excludeBookTypeLibrary, enableRecursiveSearch, useAlternativeAPI };
+    return { pageSize, showOnDeck, showRecentlyUpdated, showNewlyAdded, excludeBookTypeLibrary, enableRecursiveSearch };
 }
 exports.getOptions = getOptions;
 
@@ -687,7 +685,7 @@ const sortHelper = (a, b) => {
     return a.volume === 0 || b.volume === 0 ? b.volume - a.volume : a.volume - b.volume;
 };
 exports.KavyaInfo = {
-    version: '1.3.3',
+    version: '1.3.4',
     name: 'Kavya',
     icon: 'icon.png',
     author: 'ACK72',
@@ -872,7 +870,7 @@ class Kavya {
         // We won't use `await this.getKavitaAPI()` as we do not want to throw an error on
         // the homepage when server settings are not set
         const kavitaAPI = await (0, Common_1.getKavitaAPI)(this.stateManager);
-        const { showOnDeck, showRecentlyUpdated, showNewlyAdded, excludeBookTypeLibrary, useAlternativeAPI } = await (0, Common_1.getOptions)(this.stateManager);
+        const { showOnDeck, showRecentlyUpdated, showNewlyAdded, excludeBookTypeLibrary } = await (0, Common_1.getOptions)(this.stateManager);
         const pageSize = (await (0, Common_1.getOptions)(this.stateManager)).pageSize / 2;
         // The source define two homepage sections: new and latest
         const sections = [];
@@ -936,24 +934,16 @@ class Kavya {
                     id = 'seriesId', title = 'seriesName';
                     break;
                 case 'newlyadded':
-                    if (useAlternativeAPI)
-                        apiPath = `${kavitaAPI.url}/Series/recently-added-v2?PageNumber=1&PageSize=${pageSize}`;
-                    else
-                        apiPath = `${kavitaAPI.url}/Series/recently-added?PageNumber=1&PageSize=${pageSize}`;
+                    apiPath = `${kavitaAPI.url}/Series/recently-added-v2?PageNumber=1&PageSize=${pageSize}`;
                     break;
                 default:
-                    if (useAlternativeAPI) {
-                        apiPath = `${kavitaAPI.url}/Series/v2?PageNumber=1&PageSize=${pageSize}`;
-                        body = {
-                            statements: [{ comparison: 0, field: 19, value: section.id }],
-                            combination: 1,
-                            sortOptions: { sortField: 1, isAscending: true },
-                            limitTo: 0
-                        };
-                    }
-                    else {
-                        apiPath = `${kavitaAPI.url}/Series/all?PageNumber=1&PageSize=${pageSize}&libraryId=${section.id}`;
-                    }
+                    apiPath = `${kavitaAPI.url}/Series/v2?PageNumber=1&PageSize=${pageSize}`;
+                    body = {
+                        statements: [{ comparison: 0, field: 19, value: section.id }],
+                        combination: 1,
+                        sortOptions: { sortField: 1, isAscending: true },
+                        limitTo: 0
+                    };
                     break;
             }
             const request = App.createRequest({
@@ -989,7 +979,7 @@ class Kavya {
     // rome-ignore lint/suspicious/noExplicitAny: <explanation>
     metadata) {
         const kavitaAPI = await (0, Common_1.getKavitaAPI)(this.stateManager);
-        const { pageSize, excludeBookTypeLibrary, useAlternativeAPI } = await (0, Common_1.getOptions)(this.stateManager);
+        const { pageSize, excludeBookTypeLibrary } = await (0, Common_1.getOptions)(this.stateManager);
         const excludeLibraryIds = [];
         const page = (metadata?.page ?? 0) + 1;
         // rome-ignore lint/suspicious/noExplicitAny: <explanation>
@@ -1007,25 +997,17 @@ class Kavya {
                 useBuiltInCache = true;
                 break;
             case 'newlyadded':
-                if (useAlternativeAPI)
-                    apiPath = `${kavitaAPI.url}/Series/recently-added-v2?PageNumber=${page}&PageSize=${pageSize}`;
-                else
-                    apiPath = `${kavitaAPI.url}/Series/recently-added?PageNumber=${page}&PageSize=${pageSize}`;
+                apiPath = `${kavitaAPI.url}/Series/recently-added-v2?PageNumber=${page}&PageSize=${pageSize}`;
                 checkLibraryId = true;
                 break;
             default:
-                if (useAlternativeAPI) {
-                    apiPath = `${kavitaAPI.url}/Series/v2?PageNumber=${page}&PageSize=${pageSize}`;
-                    body = {
-                        statements: [{ comparison: 0, field: 19, value: homepageSectionId }],
-                        combination: 1,
-                        sortOptions: { sortField: 1, isAscending: true },
-                        limitTo: 0
-                    };
-                }
-                else {
-                    apiPath = `${kavitaAPI.url}/Series/all?PageNumber=${page}&PageSize=${pageSize}&libraryId=${parseInt(homepageSectionId)}`;
-                }
+                apiPath = `${kavitaAPI.url}/Series/v2?PageNumber=${page}&PageSize=${pageSize}`;
+                body = {
+                    statements: [{ comparison: 0, field: 19, value: homepageSectionId }],
+                    combination: 1,
+                    sortOptions: { sortField: 1, isAscending: true },
+                    limitTo: 0
+                };
                 break;
         }
         const request = App.createRequest({
@@ -1543,19 +1525,6 @@ const serverSettingsMenu = (stateManager, interceptor) => {
                                     await setStateData(stateManager, interceptor, values);
                                 }
                             })
-                        }),
-                        App.createDUISwitch({
-                            id: 'useAlternativeAPI',
-                            label: 'Use Alternative API',
-                            value: App.createDUIBinding({
-                                async get() {
-                                    return values.useAlternativeAPI;
-                                },
-                                async set(value) {
-                                    values.useAlternativeAPI = value;
-                                    await setStateData(stateManager, interceptor, values);
-                                }
-                            })
                         })
                     ]),
                 }),
@@ -1573,8 +1542,7 @@ async function retrieveStateData(stateManager) {
     const showNewlyAdded = await stateManager.retrieve('showNewlyAdded') ?? Common_1.DEFAULT_VALUES.showNewlyAdded;
     const excludeBookTypeLibrary = await stateManager.retrieve('excludeBookTypeLibrary') ?? Common_1.DEFAULT_VALUES.excludeBookTypeLibrary;
     const enableRecursiveSearch = await stateManager.retrieve('enableRecursiveSearch') ?? Common_1.DEFAULT_VALUES.enableRecursiveSearch;
-    const useAlternativeAPI = await stateManager.retrieve('useAlternativeAPI') ?? Common_1.DEFAULT_VALUES.useAlternativeAPI;
-    return { kavitaAddress, kavitaAPIKey, pageSize, showOnDeck, showRecentlyUpdated, showNewlyAdded, excludeBookTypeLibrary, enableRecursiveSearch, useAlternativeAPI };
+    return { kavitaAddress, kavitaAPIKey, pageSize, showOnDeck, showRecentlyUpdated, showNewlyAdded, excludeBookTypeLibrary, enableRecursiveSearch };
 }
 exports.retrieveStateData = retrieveStateData;
 // rome-ignore lint/suspicious/noExplicitAny: <explanation>
