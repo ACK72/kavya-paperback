@@ -178,8 +178,7 @@ export const DEFAULT_VALUES: any = {
 	showNewlyAdded: true,
 	excludeBookTypeLibrary: false,
 	
-	enableRecursiveSearch: false,
-	useAlternativeAPI: false
+	enableRecursiveSearch: false
 }
 
 export async function getKavitaAPI(stateManager: SourceStateManager): Promise<{url: string, key: string}> {
@@ -215,7 +214,6 @@ export async function getOptions(
 	showNewlyAdded: boolean;
 	excludeBookTypeLibrary: boolean;
 	enableRecursiveSearch: boolean;
-	useAlternativeAPI: boolean;
 }> {
 	const pageSize = (await stateManager.retrieve('pageSize') as number) ?? DEFAULT_VALUES.pageSize;
 	const showOnDeck = (await stateManager.retrieve('showOnDeck') as boolean) ?? DEFAULT_VALUES.showOnDeck;
@@ -224,7 +222,6 @@ export async function getOptions(
 	const excludeBookTypeLibrary = (await stateManager.retrieve('excludeBookTypeLibrary') as boolean) ?? DEFAULT_VALUES.excludeBookTypeLibrary;
 
 	const enableRecursiveSearch = (await stateManager.retrieve('enableRecursiveSearch') as boolean) ?? DEFAULT_VALUES.enableRecursiveSearch;
-	const useAlternativeAPI = (await stateManager.retrieve('useAlternativeAPI') as boolean) ?? DEFAULT_VALUES.useAlternativeAPI;
 
-	return { pageSize, showOnDeck, showRecentlyUpdated, showNewlyAdded, excludeBookTypeLibrary, enableRecursiveSearch, useAlternativeAPI };
+	return { pageSize, showOnDeck, showRecentlyUpdated, showNewlyAdded, excludeBookTypeLibrary, enableRecursiveSearch };
 }

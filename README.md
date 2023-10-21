@@ -1,4 +1,4 @@
-# Kavya ![Generic badge](https://img.shields.io/badge/version-1.3.3-green.svg)
+# Kavya ![Generic badge](https://img.shields.io/badge/version-1.3.4-green.svg)
 Kavya, A [Kavita](https://www.kavitareader.com/) client extension, for [Paperback](https://paperback.moe/)
 
 
@@ -9,7 +9,7 @@ You can install paperback extension source from below url
 
 ## Requirements
 - 0.8 or newer version of Paperback
-- 0.7.1 or newer version of Kavita
+- Stable version of Kavita (Tested with [linuxserver/kavita](https://docs.linuxserver.io/images/docker-kavita))
 
 
 ## Setting up Page Size

@@ -147,7 +147,6 @@ export async function searchRequest(
 			}
 		}
 	
-	
 		if (typeof searchQuery.includedTags !== 'undefined') {
 			// rome-ignore lint/suspicious/noExplicitAny: <explanation>
 			const body: any = {};

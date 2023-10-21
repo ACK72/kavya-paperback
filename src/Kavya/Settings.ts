@@ -153,19 +153,6 @@ export const serverSettingsMenu = (
 									await setStateData(stateManager, interceptor, values);
 								}
 							})
-						}),
-						App.createDUISwitch({
-							id: 'useAlternativeAPI',
-							label: 'Use Alternative API',
-							value: App.createDUIBinding({
-								async get() {
-									return values.useAlternativeAPI;
-								},
-								async set(value) {
-									values.useAlternativeAPI = value;
-									await setStateData(stateManager, interceptor, values);
-								}
-							})
 						})
 					]),
 				}),
@@ -185,9 +172,8 @@ export async function retrieveStateData(stateManager: SourceStateManager) {
 	const excludeBookTypeLibrary = (await stateManager.retrieve('excludeBookTypeLibrary') as boolean) ?? DEFAULT_VALUES.excludeBookTypeLibrary;
 
 	const enableRecursiveSearch = (await stateManager.retrieve('enableRecursiveSearch') as boolean) ?? DEFAULT_VALUES.enableRecursiveSearch;
-	const useAlternativeAPI = (await stateManager.retrieve('useAlternativeAPI') as boolean) ?? DEFAULT_VALUES.useAlternativeAPI;
 
-	return { kavitaAddress, kavitaAPIKey, pageSize, showOnDeck, showRecentlyUpdated, showNewlyAdded, excludeBookTypeLibrary, enableRecursiveSearch, useAlternativeAPI }
+	return { kavitaAddress, kavitaAPIKey, pageSize, showOnDeck, showRecentlyUpdated, showNewlyAdded, excludeBookTypeLibrary, enableRecursiveSearch }
 }
 
 // rome-ignore lint/suspicious/noExplicitAny: <explanation>

@@ -44,7 +44,7 @@ const sortHelper = (a: any, b: any) => {
 }
 
 export const KavyaInfo: SourceInfo = {
-	version: '1.3.3',
+	version: '1.3.4',
 	name: 'Kavya',
 	icon: 'icon.png',
 	author: 'ACK72',
@@ -270,7 +270,7 @@ export class Kavya implements ChapterProviding, HomePageSectionsProviding, Manga
 		// We won't use `await this.getKavitaAPI()` as we do not want to throw an error on
 		// the homepage when server settings are not set
 		const kavitaAPI = await getKavitaAPI(this.stateManager);
-		const { showOnDeck, showRecentlyUpdated, showNewlyAdded, excludeBookTypeLibrary, useAlternativeAPI } = await getOptions(this.stateManager);
+		const { showOnDeck, showRecentlyUpdated, showNewlyAdded, excludeBookTypeLibrary } = await getOptions(this.stateManager);
 		const pageSize = (await getOptions(this.stateManager)).pageSize / 2;
 
 		// The source define two homepage sections: new and latest
@@ -346,21 +346,16 @@ export class Kavya implements ChapterProviding, HomePageSectionsProviding, Manga
 					id = 'seriesId', title = 'seriesName';
 					break;
 				case 'newlyadded':
-					if (useAlternativeAPI) apiPath = `${kavitaAPI.url}/Series/recently-added-v2?PageNumber=1&PageSize=${pageSize}`;
-					else apiPath = `${kavitaAPI.url}/Series/recently-added?PageNumber=1&PageSize=${pageSize}`;
+					apiPath = `${kavitaAPI.url}/Series/recently-added-v2?PageNumber=1&PageSize=${pageSize}`;
 					break;
 				default:
-					if (useAlternativeAPI) {
-						apiPath = `${kavitaAPI.url}/Series/v2?PageNumber=1&PageSize=${pageSize}`;
-						body = {
-							statements: [{ comparison: 0, field: 19, value: section.id }],
-							combination: 1,
-							sortOptions: { sortField: 1, isAscending: true },
-							limitTo: 0
-						};
-					} else {
-						apiPath = `${kavitaAPI.url}/Series/all?PageNumber=1&PageSize=${pageSize}&libraryId=${section.id}`;
-					}
+					apiPath = `${kavitaAPI.url}/Series/v2?PageNumber=1&PageSize=${pageSize}`;
+					body = {
+						statements: [{ comparison: 0, field: 19, value: section.id }],
+						combination: 1,
+						sortOptions: { sortField: 1, isAscending: true },
+						limitTo: 0
+					};
 					break;
 			}
 			
@@ -405,7 +400,7 @@ export class Kavya implements ChapterProviding, HomePageSectionsProviding, Manga
 		metadata: any
 	): Promise<PagedResults> {
 		const kavitaAPI = await getKavitaAPI(this.stateManager);
-		const { pageSize, excludeBookTypeLibrary, useAlternativeAPI } = await getOptions(this.stateManager);
+		const { pageSize, excludeBookTypeLibrary } = await getOptions(this.stateManager);
 		const excludeLibraryIds: number[] = [];
 		const page: number = (metadata?.page ?? 0) + 1;
 
@@ -424,22 +419,17 @@ export class Kavya implements ChapterProviding, HomePageSectionsProviding, Manga
 				useBuiltInCache = true;
 				break;
 			case 'newlyadded':
-				if (useAlternativeAPI) apiPath = `${kavitaAPI.url}/Series/recently-added-v2?PageNumber=${page}&PageSize=${pageSize}`;
-				else apiPath = `${kavitaAPI.url}/Series/recently-added?PageNumber=${page}&PageSize=${pageSize}`;
+				apiPath = `${kavitaAPI.url}/Series/recently-added-v2?PageNumber=${page}&PageSize=${pageSize}`;
 				checkLibraryId = true;
 				break;
 			default:
-				if (useAlternativeAPI) {
-					apiPath = `${kavitaAPI.url}/Series/v2?PageNumber=${page}&PageSize=${pageSize}`;
-					body = {
-						statements: [{ comparison: 0, field: 19, value: homepageSectionId }],
-						combination: 1,
-						sortOptions: { sortField: 1, isAscending: true },
-						limitTo: 0
-					};
-				} else {
-					apiPath = `${kavitaAPI.url}/Series/all?PageNumber=${page}&PageSize=${pageSize}&libraryId=${parseInt(homepageSectionId)}`;
-				}
+				apiPath = `${kavitaAPI.url}/Series/v2?PageNumber=${page}&PageSize=${pageSize}`;
+				body = {
+					statements: [{ comparison: 0, field: 19, value: homepageSectionId }],
+					combination: 1,
+					sortOptions: { sortField: 1, isAscending: true },
+					limitTo: 0
+				};
 				break;
 		}
 
