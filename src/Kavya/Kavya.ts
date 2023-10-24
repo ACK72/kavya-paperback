@@ -123,7 +123,7 @@ export class Kavya implements ChapterProviding, HomePageSectionsProviding, Manga
 					mangaId: mangaId,
 					chapNum: chapter.isSpecial ? j++ : parseFloat(chapter.number), // chapter.number is 0 when it's a special
 					name: chapter.isSpecial ? title : name,
-					time: new Date(chapter.releaseDate === '0001-01-01T00:00:00' ? chapter.lastModified : chapter.releaseDate),
+					time: new Date(chapter.releaseDate === '0001-01-01T00:00:00' ? chapter.created : chapter.releaseDate),
 					volume: parseFloat(volume.name),
 					group: `${(chapter.isSpecial ? 'Specials · ' : '')}${chapter.pages} pages ${progress}`,
 					_index: i++,
