@@ -755,7 +755,7 @@ class Kavya {
                     mangaId: mangaId,
                     chapNum: chapter.isSpecial ? j++ : parseFloat(chapter.number),
                     name: chapter.isSpecial ? title : name,
-                    time: new Date(chapter.releaseDate === '0001-01-01T00:00:00' ? chapter.lastModified : chapter.releaseDate),
+                    time: new Date(chapter.releaseDate === '0001-01-01T00:00:00' ? chapter.created : chapter.releaseDate),
                     volume: parseFloat(volume.name),
                     group: `${(chapter.isSpecial ? 'Specials · ' : '')}${chapter.pages} pages ${progress}`,
                     _index: i++,
