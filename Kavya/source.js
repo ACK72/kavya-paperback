@@ -685,7 +685,7 @@ const sortHelper = (a, b) => {
     return a.volume === 0 || b.volume === 0 ? b.volume - a.volume : a.volume - b.volume;
 };
 exports.KavyaInfo = {
-    version: '1.3.4',
+    version: '1.3.5',
     name: 'Kavya',
     icon: 'icon.png',
     author: 'ACK72',
@@ -808,7 +808,7 @@ class Kavya {
         const { excludeBookTypeLibrary } = await (0, Common_1.getOptions)(this.stateManager);
         const includeLibraryIds = [];
         const libraryRequest = App.createRequest({
-            url: `${kavitaAPI.url}/Library`,
+            url: `${kavitaAPI.url}/Library/libraries`,
             method: 'GET',
         });
         const libraryResponse = await this.requestManager.schedule(libraryRequest, 1);
@@ -899,7 +899,7 @@ class Kavya {
             }));
         }
         const request = App.createRequest({
-            url: `${kavitaAPI.url}/Library`,
+            url: `${kavitaAPI.url}/Library/libraries`,
             method: 'GET',
         });
         const response = await this.requestManager.schedule(request, 1);
@@ -1030,7 +1030,7 @@ class Kavya {
         }
         if (checkLibraryId) {
             const libraryRequest = App.createRequest({
-                url: `${kavitaAPI.url}/Library`,
+                url: `${kavitaAPI.url}/Library/libraries`,
                 method: 'GET',
             });
             const libraryResponse = await this.requestManager.schedule(libraryRequest, 1);
