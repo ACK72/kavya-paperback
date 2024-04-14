@@ -44,7 +44,7 @@ const sortHelper = (a: any, b: any) => {
 }
 
 export const KavyaInfo: SourceInfo = {
-	version: '1.3.4',
+	version: '1.3.5',
 	name: 'Kavya',
 	icon: 'icon.png',
 	author: 'ACK72',
@@ -191,7 +191,7 @@ export class Kavya implements ChapterProviding, HomePageSectionsProviding, Manga
 		const includeLibraryIds: string[] = [];
 
 		const libraryRequest = App.createRequest({
-			url: `${kavitaAPI.url}/Library`,
+			url: `${kavitaAPI.url}/Library/libraries`,
 			method: 'GET',
 		});
 
@@ -304,7 +304,7 @@ export class Kavya implements ChapterProviding, HomePageSectionsProviding, Manga
 		}
 
 		const request = App.createRequest({
-			url: `${kavitaAPI.url}/Library`,
+			url: `${kavitaAPI.url}/Library/libraries`,
 			method: 'GET',
 		});
 
@@ -457,7 +457,7 @@ export class Kavya implements ChapterProviding, HomePageSectionsProviding, Manga
 
 		if (checkLibraryId) {
 			const libraryRequest = App.createRequest({
-				url: `${kavitaAPI.url}/Library`,
+				url: `${kavitaAPI.url}/Library/libraries`,
 				method: 'GET',
 			});
 
