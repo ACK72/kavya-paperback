@@ -122,7 +122,7 @@ export const serverSettingsMenu = (
 						}),
 						App.createDUISwitch({
 							id: 'excludeBookTypeLibrary',
-							label: 'Exclude Book Type Library',
+							label: 'Exclude Book & Novel Type Libraries',
 							value: App.createDUIBinding({
 								async get() {
 									return values.excludeBookTypeLibrary;
