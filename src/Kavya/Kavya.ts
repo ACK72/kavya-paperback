@@ -121,10 +121,10 @@ export class Kavya implements ChapterProviding, HomePageSectionsProviding, Manga
 				const item: any = {
 					id: `${chapter.id}`,
 					mangaId: mangaId,
-					chapNum: chapter.isSpecial ? j++ : parseFloat(chapter.number), // chapter.number is 0 when it's a special
+					chapNum: chapter.number === "-100000" ? 1 : (chapter.isSpecial ? j++ : parseFloat(chapter.number)), // chapter.number is 0 when it's a special
 					name: chapter.isSpecial ? title : name,
 					time: new Date(chapter.releaseDate === '0001-01-01T00:00:00' ? chapter.created : chapter.releaseDate),
-					volume: parseFloat(volume.name),
+					...(volume.name !== "-100000" && { volume: parseFloat(volume.name) }),
 					group: `${(chapter.isSpecial ? 'Specials · ' : '')}${chapter.pages} pages ${progress}`,
 					_index: i++,
 					// sortIndex is unused, as it seems to have an issue when changing the sort order
