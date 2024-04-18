@@ -124,7 +124,7 @@ export class Kavya implements ChapterProviding, HomePageSectionsProviding, Manga
 					chapNum: chapter.number === "-100000" ? 1 : (chapter.isSpecial ? j++ : parseFloat(chapter.number)), // chapter.number is 0 when it's a special
 					name: chapter.isSpecial ? title : name,
 					time: new Date(chapter.releaseDate === '0001-01-01T00:00:00' ? chapter.created : chapter.releaseDate),
-					...(volume.name !== "-100000" && { volume: parseFloat(volume.name) }),
+					volume: chapter.isSpecial ? 0 : volume.name === "-100000" ? 0 : parseFloat(volume.name) , // assign both special and chapters w/o volumes w/ volume 0 as it's hidden by paperback
 					group: `${(chapter.isSpecial ? 'Specials · ' : '')}${chapter.pages} pages ${progress}`,
 					_index: i++,
 					// sortIndex is unused, as it seems to have an issue when changing the sort order
