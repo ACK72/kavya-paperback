@@ -62,7 +62,7 @@ export async function searchRequest(
 		const result = JSON.parse(response.data ?? '[]');
 
 		for (const library of result) {
-			if (library.type === 2) {
+			if (library.type === 2 || library.type === 4) {
 				excludeLibraryIds.push(library.id);
 			}
 		}
