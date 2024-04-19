@@ -54,7 +54,7 @@ export async function searchRequest(
 
 	if (excludeBookTypeLibrary) {
 		const request = App.createRequest({
-			url: `${kavitaAPI.url}/Library`,
+			url: `${kavitaAPI.url}/Library/libraries`,
 			method: 'GET'
 		});
 
