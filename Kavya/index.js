@@ -753,10 +753,10 @@ class Kavya {
                 const item = {
                     id: `${chapter.id}`,
                     mangaId: mangaId,
-                    chapNum: chapter.isSpecial ? j++ : parseFloat(chapter.number),
+                    chapNum: chapter.number === "-100000" ? 1 : (chapter.isSpecial ? j++ : parseFloat(chapter.number)),
                     name: chapter.isSpecial ? title : name,
                     time: new Date(chapter.releaseDate === '0001-01-01T00:00:00' ? chapter.created : chapter.releaseDate),
-                    volume: parseFloat(volume.name),
+                    volume: chapter.isSpecial ? 0 : volume.name === "-100000" ? 0 : parseFloat(volume.name),
                     group: `${(chapter.isSpecial ? 'Specials · ' : '')}${chapter.pages} pages ${progress}`,
                     _index: i++,
                     // sortIndex is unused, as it seems to have an issue when changing the sort order
@@ -1248,7 +1248,7 @@ metadata, requestManager, interceptor, stateManager, cacheManager) {
     const excludeLibraryIds = [];
     if (excludeBookTypeLibrary) {
         const request = App.createRequest({
-            url: `${kavitaAPI.url}/Library`,
+            url: `${kavitaAPI.url}/Library/libraries`,
             method: 'GET'
         });
         const response = await requestManager.schedule(request, 1);
