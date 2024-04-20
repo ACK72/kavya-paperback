@@ -1254,7 +1254,7 @@ metadata, requestManager, interceptor, stateManager, cacheManager) {
         const response = await requestManager.schedule(request, 1);
         const result = JSON.parse(response.data ?? '[]');
         for (const library of result) {
-            if (library.type === 2) {
+            if (library.type === 2 || library.type === 4) {
                 excludeLibraryIds.push(library.id);
             }
         }
@@ -1494,7 +1494,7 @@ const serverSettingsMenu = (stateManager, interceptor) => {
                         }),
                         App.createDUISwitch({
                             id: 'excludeBookTypeLibrary',
-                            label: 'Exclude Book Type Library',
+                            label: 'Exclude Book & Novel Type Libraries',
                             value: App.createDUIBinding({
                                 async get() {
                                     return values.excludeBookTypeLibrary;
