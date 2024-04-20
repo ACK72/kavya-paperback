@@ -121,14 +121,14 @@ export const serverSettingsMenu = (
 							})
 						}),
 						App.createDUISwitch({
-							id: 'excludeBookTypeLibrary',
+							id: 'excludeUnsupportedLibrary',
 							label: 'Exclude Book & Novel Type Libraries',
 							value: App.createDUIBinding({
 								async get() {
-									return values.excludeBookTypeLibrary;
+									return values.excludeUnsupportedLibrary;
 								},
 								async set(value) {
-									values.excludeBookTypeLibrary = value;
+									values.excludeUnsupportedLibrary = value;
 									await setStateData(stateManager, interceptor, values);
 								}
 							})
@@ -169,14 +169,13 @@ export async function retrieveStateData(stateManager: SourceStateManager) {
 	const showOnDeck = (await stateManager.retrieve('showOnDeck') as boolean) ?? DEFAULT_VALUES.showOnDeck;
 	const showRecentlyUpdated = (await stateManager.retrieve('showRecentlyUpdated') as boolean) ?? DEFAULT_VALUES.showRecentlyUpdated;
 	const showNewlyAdded = (await stateManager.retrieve('showNewlyAdded') as boolean) ?? DEFAULT_VALUES.showNewlyAdded;
-	const excludeBookTypeLibrary = (await stateManager.retrieve('excludeBookTypeLibrary') as boolean) ?? DEFAULT_VALUES.excludeBookTypeLibrary;
+	const excludeUnsupportedLibrary = (await stateManager.retrieve('excludeUnsupportedLibrary') as boolean) ?? DEFAULT_VALUES.excludeUnsupportedLibrary;
 
 	const enableRecursiveSearch = (await stateManager.retrieve('enableRecursiveSearch') as boolean) ?? DEFAULT_VALUES.enableRecursiveSearch;
 
-	return { kavitaAddress, kavitaAPIKey, pageSize, showOnDeck, showRecentlyUpdated, showNewlyAdded, excludeBookTypeLibrary, enableRecursiveSearch }
+	return { kavitaAddress, kavitaAPIKey, pageSize, showOnDeck, showRecentlyUpdated, showNewlyAdded, excludeUnsupportedLibrary, enableRecursiveSearch }
 }
 
-// rome-ignore lint/suspicious/noExplicitAny: <explanation>
 export async function setStateData(stateManager: SourceStateManager, interceptor: KavitaRequestInterceptor, data: Record<string, any>) {
 	const promises: Promise<void>[] = [];
 	const prevStateData: any = await retrieveStateData(stateManager);

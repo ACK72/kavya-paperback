@@ -1,5 +1,4 @@
 export class CacheManager {
-	// rome-ignore lint/suspicious/noExplicitAny: <explanation>
 	private cachedData: { [key: number]: { time: Date, data: any } };
 
 	constructor() {
@@ -32,7 +31,6 @@ export class CacheManager {
 		return this.cachedData[key]?.data;
 	}
 
-	// rome-ignore lint/suspicious/noExplicitAny: <explanation>
 	setCachedData(str: string, data: any) {
 		const hash = this.getHash(str);
 		let cacheTime = this.cachedData[hash]?.time ?? new Date();

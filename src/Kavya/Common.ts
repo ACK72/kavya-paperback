@@ -166,7 +166,6 @@ export function searchRequestToString(searchQuery: SearchRequest): string {
 //
 // Kavya Setting State Methods
 //
-// rome-ignore lint/suspicious/noExplicitAny: <explanation>
 export const DEFAULT_VALUES: any = {
 	kavitaAddress: 'https://demo.kavitareader.com',
 	kavitaAPIUrl: 'https://demo.kavitareader.com/api',
@@ -176,7 +175,7 @@ export const DEFAULT_VALUES: any = {
 	showOnDeck: true,
 	showRecentlyUpdated: true,
 	showNewlyAdded: true,
-	excludeBookTypeLibrary: false,
+	excludeUnsupportedLibrary: false,
 	
 	enableRecursiveSearch: false
 }
@@ -212,16 +211,16 @@ export async function getOptions(
 	showOnDeck: boolean;
 	showRecentlyUpdated: boolean;
 	showNewlyAdded: boolean;
-	excludeBookTypeLibrary: boolean;
+	excludeUnsupportedLibrary: boolean;
 	enableRecursiveSearch: boolean;
 }> {
 	const pageSize = (await stateManager.retrieve('pageSize') as number) ?? DEFAULT_VALUES.pageSize;
 	const showOnDeck = (await stateManager.retrieve('showOnDeck') as boolean) ?? DEFAULT_VALUES.showOnDeck;
 	const showRecentlyUpdated = (await stateManager.retrieve('showRecentlyUpdated') as boolean) ?? DEFAULT_VALUES.showRecentlyUpdated;
 	const showNewlyAdded = (await stateManager.retrieve('showNewlyAdded') as boolean) ?? DEFAULT_VALUES.showNewlyAdded;
-	const excludeBookTypeLibrary = (await stateManager.retrieve('excludeBookTypeLibrary') as boolean) ?? DEFAULT_VALUES.excludeBookTypeLibrary;
+	const excludeUnsupportedLibrary = (await stateManager.retrieve('excludeUnsupportedLibrary') as boolean) ?? DEFAULT_VALUES.excludeUnsupportedLibrary;
 
 	const enableRecursiveSearch = (await stateManager.retrieve('enableRecursiveSearch') as boolean) ?? DEFAULT_VALUES.enableRecursiveSearch;
 
-	return { pageSize, showOnDeck, showRecentlyUpdated, showNewlyAdded, excludeBookTypeLibrary, enableRecursiveSearch };
+	return { pageSize, showOnDeck, showRecentlyUpdated, showNewlyAdded, excludeUnsupportedLibrary, enableRecursiveSearch };
 }

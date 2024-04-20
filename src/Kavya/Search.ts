@@ -14,7 +14,6 @@ import {
 	searchRequestToString
 } from './Common';
 
-// rome-ignore lint/suspicious/noExplicitAny: <explanation>
 const KAVITA_PERSON_ROLES: any = {
 	'1': 'other',
 	'2': 'artist',
@@ -32,7 +31,6 @@ const KAVITA_PERSON_ROLES: any = {
 
 export async function searchRequest(
 	searchQuery: SearchRequest,
-	// rome-ignore lint/suspicious/noExplicitAny: <explanation>
 	metadata: any,
 	requestManager: RequestManager,
 	interceptor: KavitaRequestInterceptor,
@@ -47,12 +45,12 @@ export async function searchRequest(
 	}
 	
 	const kavitaAPI = await getKavitaAPI(stateManager);
-	const { enableRecursiveSearch, excludeBookTypeLibrary, pageSize } = await getOptions(stateManager);
+	const { enableRecursiveSearch, excludeUnsupportedLibrary, pageSize } = await getOptions(stateManager);
 	const page: number = metadata?.page ?? 0;
 
 	const excludeLibraryIds: number[] = [];
 
-	if (excludeBookTypeLibrary) {
+	if (excludeUnsupportedLibrary) {
 		const request = App.createRequest({
 			url: `${kavitaAPI.url}/Library/libraries`,
 			method: 'GET'
@@ -73,7 +71,6 @@ export async function searchRequest(
 	const tagSearchTiles: PartialSourceManga[] = [];
 	const titleSearchTiles: PartialSourceManga[] = [];
 
-	// rome-ignore lint/suspicious/noExplicitAny: <explanation>
 	let result: any = cacheManager.getCachedData(searchRequestToString(searchQuery));
 	if (result === undefined) {
 		if (typeof searchQuery.title === 'string' && searchQuery.title !== '') {			
@@ -148,7 +145,6 @@ export async function searchRequest(
 		}
 	
 		if (typeof searchQuery.includedTags !== 'undefined') {
-			// rome-ignore lint/suspicious/noExplicitAny: <explanation>
 			const body: any = {};
 			const peopleTags: string[] = [];
 	
